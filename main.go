@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 
 	"github.com/pb33f/libopenapi"
@@ -17,6 +18,7 @@ func bailIfErr(err error) {
 	}
 }
 
+// TODO: Should the handler be of a different sig?
 func handler(cmd *cobra.Command, args []string) {
 }
 
@@ -102,7 +104,7 @@ func main() {
 						cmdGroups[groupName] = []cobra.Command{}
 					}
 				default:
-					fmt.Printf("TODO: Unhandled extension %s with val %v\n", ext, opts)
+					slog.Warn("TODO: Unhandled extension", "ext", ext, "opts", opts)
 				}
 			}
 
@@ -120,7 +122,7 @@ func main() {
 						cmd.MarkFlagRequired(param.Name)
 					}
 				default:
-					fmt.Printf("TODO: Unhandled param %s of type %s\n", param.Name, param.Schema.Schema().Type[0])
+					slog.Warn("TODO: Unhandled param", "name", param.Name, "type", param.Schema.Schema().Type[0])
 				}
 			}
 
@@ -128,25 +130,26 @@ func main() {
 				for mime, kind := range body.Content.FromOldest() {
 					switch kind.Schema.Schema().Type[0] {
 					case "object":
-						paramName := "cli-mate-data"
+						paramName := "cli-mate-data" // TODO: hammock on ways to handle the req bodies. Maybe take in a stdin?
 
 						flags.StringP(paramName, "f", "", body.Description)
 						if req := body.Required; req != nil && *req {
 							cmd.MarkFlagRequired(paramName)
 						}
 					default:
-						fmt.Printf("TODO: Unhandled request body with mime %s of type %v\n", mime, kind.Schema.Schema().Type[0])
+						slog.Warn("TODO: Unhandled request body", "mime", mime, "type", kind.Schema.Schema().Type[0])
 					}
 				}
 			}
 
 			handler, ok := handlerMap[op.OperationId]
 			if !ok {
-				fmt.Println("TODO: Unknown op id, skipping", op.OperationId)
+				slog.Warn("TODO: Unknown op, skipping", "id", op.OperationId)
 				continue
 			}
 
 			cmd.Use = op.OperationId
+			// TODO: hammock on better ways to handle aliases
 			if len(aliases) > 0 {
 				cmd.Use = aliases[0]
 				cmd.Aliases = aliases[1:]
