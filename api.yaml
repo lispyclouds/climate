@@ -1,0 +1,1309 @@
+# Copyright 2018- Rahul De
+#
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
+openapi: "3.0.0"
+
+info:
+  title: Bob the Builder
+  version: "0.1.0"
+  description: The modular, extensible CI/CD platform
+  contact:
+    name: Bob developers
+    url: https://github.com/bob-cd/bob/discussions
+
+servers:
+  - url: http://localhost:7777
+
+tags:
+  - name: api
+    description: Operations for this API itself
+  - name: cluster
+    description: Operations for administering the cluster
+  - name: pipeline
+    description: Operations for pipelines
+  - name: artifact
+    description: Operations for artifacts and artifact stores
+  - name: resource
+    description: Operations for resource and resource providers
+  - name: analytics
+    description: Operations for cluster analytics
+  - name: observability
+    description: Operations for cluster observability
+
+paths:
+  "/api.yaml":
+    get:
+      operationId: GetApiSpec
+      summary: Returns the OpenAPI spec
+      description: Returns this OpenAPI YAML for external consumption
+      tags:
+        - api
+      x-cli-hidden: true
+
+      responses:
+        "200":
+          description: Returns the spec
+          content:
+            application/yaml:
+              schema:
+                type: string
+
+  "/can-we-build-it":
+    get:
+      operationId: HealthCheck
+      summary: Runs health checks for Bob
+      description: Runs all cluster health checks and reports the status
+      tags:
+        - cluster
+      x-cli-aliases:
+        - ping
+      x-cli-group: cluster
+
+      responses:
+        "200":
+          description: Successful health check
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimpleResponse"
+              examples:
+                healthy:
+                  value:
+                    message: "Yes we can! 🔨 🔨"
+
+        default:
+          description: Failed health check
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/SimpleResponse"
+              examples:
+                unhealthy:
+                  value:
+                    message: "Health check failed: Postgres not healthy"
+
+  "/pipelines/groups/{group}/names/{name}":
+    post:
+      operationId: PipelineCreate
+      summary: Creates a new pipeline
+      description: Submits a new pipeline creation request given the pipeline schema
+      tags:
+        - pipeline
+      x-cli-aliases:
+        - create
+      x-cli-group: pipelines
+
+      parameters:
+        - name: group
+          required: true
+          in: path
+          description: The group of the pipeline
+          schema:
+            type: string
+        - name: name
+          required: true
+          in: path
+          description: The name of the pipeline
+          schema:
+            type: string
+
+      requestBody:
+        description: The pipeline schema definition
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Pipeline"
+            examples:
+              pipeline:
+                value:
+                  image: gradle:jdk11
+                  vars:
+                    LOG_LEVEL: error
+                  steps:
+                    - cmd: echo build started.
+                    - needs_resource: source-code
+                      cmd: gradle test
+                    - cmd: gradle shadowJar
+                      produces_artifact:
+                        name: uberjar
+                        path: build/libs/bob-example-1.0-SNAPSHOT-all.jar
+                        store: local
+                  resources:
+                    - name: source-code
+                      type: external
+                      provider: git
+                      params:
+                        repo: https://github.com/lispyclouds/bob-example
+                        branch: main
+
+      responses:
+        "202":
+          description: Successful creation of the pipeline
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimpleResponse"
+              examples:
+                success:
+                  value:
+                    message: "Ok"
+        default:
+          description: Failed creation of the pipeline
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimpleResponse"
+              examples:
+                failure:
+                  value:
+                    message: "Pipeline creation error: Check params or if its already created"
+    delete:
+      operationId: PipelineDelete
+      summary: Deletes a pipeline
+      description: Submits a pipeline deletion creation request given the pipeline group and name
+      tags:
+        - pipeline
+      x-cli-aliases:
+        - delete
+      x-cli-group: pipelines
+
+      parameters:
+        - name: group
+          required: true
+          in: path
+          description: The group of the pipeline
+          schema:
+            type: string
+        - name: name
+          required: true
+          in: path
+          description: The name of the pipeline
+          schema:
+            type: string
+
+      responses:
+        "202":
+          description: Successful deletion of the pipeline
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimpleResponse"
+              examples:
+                success:
+                  value:
+                    message: "Ok"
+        "422":
+          description: Invalid deletion when pipeline is running
+          content:
+            application/json:
+              schema:
+                type: object
+              examples:
+                success:
+                  value:
+                    message:
+                      error: "Pipeline has active runs. Wait for them to finish or stop them."
+                      runs:
+                        - run-id-1
+                        - run-id-2
+
+  "/pipelines/start/groups/{group}/names/{name}":
+    post:
+      operationId: PipelineStart
+      summary: Starts a pipeline
+      description: Submits a new pipeline start request given the pipeline group and name
+      tags:
+        - pipeline
+      x-cli-aliases:
+        - start
+      x-cli-group: pipelines
+
+      parameters:
+        - name: group
+          required: true
+          in: path
+          description: The group of the pipeline
+          schema:
+            type: string
+        - name: name
+          required: true
+          in: path
+          description: The name of the pipeline
+          schema:
+            type: string
+
+      requestBody:
+        description: Optional metadata map for runners. If provided must include runner/type
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - runner/type
+              properties:
+                runner/type:
+                  description: Describes which runner type a job is intended for, defaults to docker
+                  type: string
+
+      responses:
+        "202":
+          description: Successfully start the pipeline
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimpleResponse"
+              examples:
+                success:
+                  value:
+                    message: "Run ID of the pipeline"
+        "422":
+          description: Pipeline cannot be started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimpleResponse"
+              examples:
+                success:
+                  value:
+                    message: "Pipeline is paused. Unpause it first."
+
+  "/pipelines/stop/groups/{group}/names/{name}/runs/{id}":
+    post:
+      operationId: PipelineStop
+      summary: Stops a pipeline
+      description: Submits a pipeline stop request given the pipeline group, name and run id
+      tags:
+        - pipeline
+      x-cli-aliases:
+        - stop
+      x-cli-group: pipelines
+
+      parameters:
+        - name: group
+          required: true
+          in: path
+          description: The group of the pipeline
+          schema:
+            type: string
+        - name: name
+          required: true
+          in: path
+          description: The name of the pipeline
+          schema:
+            type: string
+        - name: id
+          required: true
+          in: path
+          description: The id of the pipeline run
+          schema:
+            type: string
+
+      responses:
+        "202":
+          description: Successful stopping of the pipeline
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimpleResponse"
+              examples:
+                success:
+                  value:
+                    message: "Ok"
+
+  "/pipelines/pause/groups/{group}/names/{name}":
+    post:
+      operationId: PipelinePause
+      summary: Pauses a pipeline from being scheduled on a runner
+      description: Submits a pipeline pause request given the pipeline group and name. It wont be scheduled to run unless unpaused. Pipelines in-flight will complete. NOP if paused already.
+      tags:
+        - pipeline
+      x-cli-aliases:
+        - pause
+      x-cli-group: pipelines
+
+      parameters:
+        - name: group
+          required: true
+          in: path
+          description: The group of the pipeline
+          schema:
+            type: string
+        - name: name
+          required: true
+          in: path
+          description: The name of the pipeline
+          schema:
+            type: string
+
+      responses:
+        "202":
+          description: Successful pausing of the pipeline
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimpleResponse"
+              examples:
+                success:
+                  value:
+                    message: "Ok"
+
+  "/pipelines/unpause/groups/{group}/names/{name}":
+    post:
+      operationId: PipelineUnpause
+      summary: Unpauses a pipeline for scheduling on a runner
+      description: Submits a pipeline unpause request given the pipeline group and name. Subsequent start requests will be honoured. NOP if unpaused already.
+      tags:
+        - pipeline
+      x-cli-aliases:
+        - unpause
+      x-cli-group: pipelines
+
+      parameters:
+        - name: group
+          required: true
+          in: path
+          description: The group of the pipeline
+          schema:
+            type: string
+        - name: name
+          required: true
+          in: path
+          description: The name of the pipeline
+          schema:
+            type: string
+
+      responses:
+        "202":
+          description: Successful unpausing of the pipeline
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimpleResponse"
+              examples:
+                success:
+                  value:
+                    message: "Ok"
+
+  "/pipelines/logs/runs/{id}/offset/{offset}/lines/{lines}":
+    get:
+      operationId: PipelineLogs
+      summary: Fetches the logs of a pipeline
+      description: Streams the pipeline logs from the DB given the pipeline run id, offset and lines to fetch
+      tags:
+        - pipeline
+      x-cli-aliases:
+        - logs
+      x-cli-group: pipelines
+
+      parameters:
+        - name: id
+          required: true
+          in: path
+          description: The id of the pipeline run
+          schema:
+            type: string
+        - name: offset
+          required: true
+          in: path
+          description: The starting line of the logs
+          schema:
+            type: integer
+        - name: lines
+          required: true
+          in: path
+          description: The number of lines from the starting line
+          schema:
+            type: integer
+
+      responses:
+        "200":
+          description: Logs of the pipeline run
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PipelineLogsResponse"
+              examples:
+                success:
+                  value:
+                    message:
+                      - "[bob] log line 1"
+                      - "log line 2"
+                      - "log line 3"
+                      - "log line 4"
+                      - "[bob] log line 5"
+                      - "log line 6"
+        default:
+          description: Failed log fetch
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimpleResponse"
+              examples:
+                failure:
+                  value:
+                    message: "<some error message>"
+
+  "/pipelines/status/runs/{id}":
+    get:
+      operationId: PipelineStatus
+      summary: Fetches the status of the pipeline
+      description: Fetches the pipeline status from the DB given the pipeline run id
+      tags:
+        - pipeline
+      x-cli-aliases:
+        - status
+      x-cli-group: pipelines
+
+      parameters:
+        - name: id
+          required: true
+          in: path
+          description: The id of the pipeline run
+          schema:
+            type: string
+
+      responses:
+        "200":
+          description: Successful status fetch of the pipeline
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatusResponse"
+              examples:
+                passed:
+                  value:
+                    message: "passed"
+                running:
+                  value:
+                    message: "running"
+                failed:
+                  value:
+                    message: "failed"
+                stopped:
+                  value:
+                    message: "stopped"
+        "404":
+          description: Cannot find status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimpleResponse"
+              examples:
+                failure:
+                  value:
+                    message: "Cannot find status"
+        default:
+          description: Failed status fetch of the pipeline
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimpleResponse"
+              examples:
+                failure:
+                  value:
+                    message: "<some error message>"
+
+  "/pipelines/groups/{group}/names/{name}/runs/{id}/artifact-stores/{store-name}/artifact/{artifact-name}":
+    get:
+      operationId: PipelineArtifactFetch
+      summary: Fetches artifact produced by a pipeline run
+      description: Fetches the artifact produced by a pipeline run from the artifact store given the run id, artifact store and name
+      tags:
+        - pipeline
+        - artifact
+      x-cli-aliases:
+        - fetch-artifact
+      x-cli-group: pipelines
+
+      parameters:
+        - name: group
+          required: true
+          in: path
+          description: The group of the pipeline
+          schema:
+            type: string
+        - name: name
+          required: true
+          in: path
+          description: The name of the pipeline
+          schema:
+            type: string
+        - name: id
+          required: true
+          in: path
+          description: The id of the pipeline run
+          schema:
+            type: string
+        - name: store-name
+          required: true
+          in: path
+          description: The store from which the artifact is to be fetched
+          schema:
+            type: string
+        - name: artifact-name
+          required: true
+          in: path
+          description: The name of the artifact to fetch
+          schema:
+            type: string
+
+      responses:
+        "200":
+          description: The TAR archive of the artifact
+          content:
+            application/tar:
+              schema:
+                type: string
+                format: binary
+        default:
+          description: Failed artifact fetch
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimpleResponse"
+              examples:
+                failure:
+                  value:
+                    message: "<some error message>"
+
+  "/pipelines":
+    get:
+      operationId: PipelineList
+      summary: List all pipelines filtered by group, name and status, case sensitive
+      description: Fetches all the known pipelines given the pipeline group, name and an optional status
+      tags:
+        - pipeline
+      x-cli-aliases:
+        - list
+        - ls
+        - get
+      x-cli-group: pipelines
+
+      parameters:
+        - name: group
+          required: false
+          in: query
+          description: The group of the pipeline
+          schema:
+            type: string
+        - name: name
+          required: false
+          in: query
+          description: The name of the pipeline
+          schema:
+            type: string
+        - name: status
+          required: false
+          in: query
+          description: The status of the pipeline
+          schema:
+            type: string
+
+      responses:
+        "200":
+          description: List of pipelines
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PipelinesResponse"
+              examples:
+                success:
+                  value:
+                    message:
+                      - group: dev
+                        name: test
+                        image: busybox:musl
+                        steps:
+                          - cmd: echo hello
+        default:
+          description: Failed listing of pipelines
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimpleResponse"
+              examples:
+                failure:
+                  value:
+                    message: "Failed to fetch pipelines <some error message>"
+
+  "/pipelines/groups/{group}/names/{name}/runs":
+    get:
+      operationId: PipelineRuns
+      summary: List all pipelines runs by group and name
+      description: Lists all known pipeline runs given the group and name
+      tags:
+        - pipeline
+      x-cli-aliases:
+        - list
+        - ls
+        - get
+      x-cli-group: pipeline-runs
+
+      parameters:
+        - name: group
+          required: true
+          in: path
+          description: The group of the pipeline
+          schema:
+            type: string
+        - name: name
+          required: true
+          in: path
+          description: The name of the pipeline
+          schema:
+            type: string
+
+      responses:
+        "200":
+          description: List of pipeline runs
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PipelineRunsResponse"
+              examples:
+                success:
+                  value:
+                    message:
+                      - run-id: r-a-passed-id
+                        status: passed
+                      - run-id: r-a-failed-id
+                        status: failed
+        default:
+          description: Failed listing of pipeline runs
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimpleResponse"
+              examples:
+                failure:
+                  value:
+                    message: "Failed to fetch pipelines <some error message>"
+
+  "/resource-providers/{name}":
+    post:
+      operationId: ResourceProviderCreate
+      summary: Creates a resource provider with its name and attributes
+      description: Submits a new resource provider creation request given the name and url
+      tags:
+        - resource
+      x-cli-aliases:
+        - create
+      x-cli-group: resource-providers
+
+      parameters:
+        - name: name
+          required: true
+          in: path
+          description: Unique name of the resource provider
+          schema:
+            type: string
+
+      requestBody:
+        description: The attributes of the resource provider
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResourceProviderAttributes"
+            examples:
+              attrs:
+                value:
+                  url: "http://my-resource-provider:8000"
+
+      responses:
+        "202":
+          description: Successfully created a resource provider
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimpleResponse"
+              examples:
+                success:
+                  value:
+                    message: "Ok"
+        default:
+          description: Failed to create a resource provider
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimpleResponse"
+              examples:
+                failure:
+                  value:
+                    message: "Resource Provider may already be registered"
+    delete:
+      operationId: ResourceProviderDelete
+      summary: Deletes a resource provider by name
+      description: Submits a resource provider deletion request given the name
+      tags:
+        - resource
+      x-cli-aliases:
+        - delete
+      x-cli-group: resource-providers
+
+      parameters:
+        - name: name
+          required: true
+          in: path
+          description: Unique name of the external resource
+          schema:
+            type: string
+
+      responses:
+        "202":
+          description: Successfully delete a resource provider
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimpleResponse"
+              examples:
+                success:
+                  value:
+                    message: "Ok"
+
+  "/resource-providers":
+    get:
+      operationId: ResourceProviderList
+      summary: Lists all registered resources providers by name
+      description: Lists all known resource providers
+      tags:
+        - resource
+      x-cli-aliases:
+        - list
+        - ls
+        - get
+      x-cli-group: resource-providers
+
+      responses:
+        "200":
+          description: List of resource providers
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResourceProvidersResponse"
+              examples:
+                resource-providers:
+                  value:
+                    message:
+                      - "github-provider"
+                      - "salsa-provider"
+
+  "/artifact-stores/{name}":
+    post:
+      operationId: ArtifactStoreCreate
+      summary: Creates an artifact store with its name and attributes
+      description: Submits a new artifact store creation request given the name and url
+      tags:
+        - artifact
+      x-cli-aliases:
+        - create
+      x-cli-group: artifact-stores
+
+      parameters:
+        - name: name
+          required: true
+          in: path
+          description: Unique name of the artifact store
+          schema:
+            type: string
+
+      requestBody:
+        description: The attributes of the artifact store
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ArtifactStoreAttributes"
+            examples:
+              attributes:
+                value:
+                  url: "http://my-artifact-store:8000"
+
+      responses:
+        "202":
+          description: Successfully created an artifact store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimpleResponse"
+              examples:
+                success:
+                  value:
+                    message: "Ok"
+        default:
+          description: Failed to create an artifact store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimpleResponse"
+              examples:
+                failure:
+                  value:
+                    message: "Artifact Store may already be registered"
+    delete:
+      operationId: ArtifactStoreDelete
+      summary: Deletes an artifact store by name
+      description: Submits a artifact store deletion request given the name
+      tags:
+        - artifact
+      x-cli-aliases:
+        - delete
+      x-cli-group: artifact-stores
+
+      parameters:
+        - name: name
+          required: true
+          in: path
+          description: Unique name of the artifact store
+          schema:
+            type: string
+
+      responses:
+        "202":
+          description: Successfully delete an artifact store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimpleResponse"
+              examples:
+                success:
+                  value:
+                    message: "Ok"
+
+  "/artifact-stores":
+    get:
+      operationId: ArtifactStoreList
+      summary: Lists all registered artifact stores by name
+      description: Lists all known artifact stores
+      tags:
+        - artifact
+      x-cli-aliases:
+        - list
+        - ls
+        - get
+      x-cli-group: artifact-stores
+
+      responses:
+        "200":
+          description: List of artifact stores
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ArtifactStoresResponse"
+              examples:
+                artifact-stores:
+                  value:
+                    message:
+                      - "s3-store"
+                      - "file-store"
+
+  "/query":
+    get:
+      operationId: Query
+      summary: Runs a query on XTDB, intended for point in time analytics
+      description: Runs a direct xt datalog read query on the DB, useful for arbitrary analytics and point in time queries
+      tags:
+        - analytics
+      x-cli-aliases:
+        - run
+      x-cli-group: query
+
+      parameters:
+        - name: q
+          description: Query to execute
+          required: true
+          in: query
+          schema:
+            type: string
+        - name: t
+          description: Point in time
+          required: false
+          in: query
+          schema:
+            type: string
+
+      responses:
+        "200":
+          description: Successful query
+          content:
+            application/json:
+              schema:
+                type: object
+              examples:
+                sucess:
+                  value: []
+
+        default:
+          description: Failed query
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimpleResponse"
+              examples:
+                unhealthy:
+                  value:
+                    message: "Query failed: <Error>"
+  "/error":
+    get:
+      operationId: GetError
+      summary: Fetches the next available system error
+      description: Fetches the next available error from the errors queue, this is a destructive read
+      tags:
+        - observability
+      x-cli-hidden: true
+
+      responses:
+        "200":
+          description: Successful fetch
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimpleResponse"
+              examples:
+                sucess:
+                  value:
+                    message: "errors"
+
+        default:
+          description: Failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimpleResponse"
+              examples:
+                unhealthy:
+                  value:
+                    message: "<Some Error>"
+
+  "/events":
+    get:
+      operationId: GetEvents
+      summary: Stream real-time events from the cluster via SSE
+      description: Stream real-time events from the cluster. Stores upto 7 days by default and starts streaming from the beginning via SSE
+      tags:
+        - observability
+      x-cli-aliases:
+        - stream
+        - get
+      x-cli-group: events
+
+      responses:
+        "200":
+          description: Successful fetch
+          content:
+            text/event-stream:
+              schema:
+                type: string
+
+        default:
+          description: Failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimpleResponse"
+              examples:
+                unhealthy:
+                  value:
+                    message: "<Some Error>"
+
+  "/metrics":
+    get:
+      operationId: GetMetrics
+      summary: Generates Prometheus compatible cluster metrics
+      description: Emits the Prometheus compatible metrics for the entire cluster
+      tags:
+        - observability
+      x-cli-hidden: true
+
+      responses:
+        "200":
+          description: Successful fetch
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                sucess:
+                  value: "... Prometheus compatible metrics ..."
+
+        default:
+          description: Failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimpleResponse"
+              examples:
+                unhealthy:
+                  value:
+                    message: "<Some Error>"
+
+  "/cctray.xml":
+    get:
+      operationId: CCTray
+      summary: Emits a CCTray compatible XML status report
+      description: Generates a CCTray XML report, useful for observability tooling like CCMenu
+      tags:
+        - observability
+      x-cli-hidden: true
+
+      responses:
+        "200":
+          description: Successful fetch
+          content:
+            application/xml:
+              schema:
+                $ref: "#/components/schemas/Projects"
+              examples:
+                sucess:
+                  value:
+                    - name: "dev:pipeline1"
+                      activity: Sleeping
+                      lastBuildStatus: Success
+                      lastBuildLabel: "r-0ef66ba9-e397-461b-a6d9-f52f91889264"
+                      lastBuildTime: "2020-12-21T14:35:21.577028Z"
+                      webUrl: null
+                    - name: "dev:pipeline2"
+                      activity: Running
+                      lastBuildStatus: Success
+                      lastBuildLabel: "r-0ef55ba9-e397-461c-a6d9-f52f95544882"
+                      lastBuildTime: "2020-12-21T14:35:21.577028Z"
+                      webUrl: null
+
+        default:
+          description: Failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimpleResponse"
+              examples:
+                unhealthy:
+                  value:
+                    message: "<Some Error>"
+  "/cluster/info":
+    get:
+      operationId: ClusterInfo
+      summary: Cluster overview
+      description: Shows the current cluster state with connected nodes and resources
+      tags:
+        - observability
+      x-cli-aliases:
+        - info
+      x-cli-group: cluster
+
+      responses:
+        "200":
+          description: Successful fetch
+          content:
+            application/json:
+              schema:
+                type: object
+
+components:
+  schemas:
+    Projects:
+      xml:
+        wrapped: true
+      type: array
+      items:
+        type: object
+        required:
+          - name
+          - activity
+          - lastBuildStatus
+          - lastBuildLabel
+          - lastBuildTime
+          - webUrl
+        properties:
+          name:
+            type: string
+          activity:
+            type: string
+          lastBuildStatus:
+            type: string
+          lastBuildLabel:
+            type: string
+          lastBuildTime:
+            type: string
+          webUrl:
+            type: string
+        xml:
+          name: Project
+
+    SimpleResponse:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+
+    Resource:
+      type: object
+      required:
+        - name
+        - type
+        - provider
+      properties:
+        name:
+          type: string
+          description: Unique name of the resource
+        params:
+          type: object
+          description: The key-value pairs of params to be passed to the resource provider
+        type:
+          type: string
+          enum:
+            - external
+            - internal
+        provider:
+          type: string
+          description: Unique name of the registered resource provider
+
+    Artifact:
+      type: object
+      required:
+        - name
+        - path
+        - store
+      properties:
+        name:
+          type: string
+          description: Unique name of the artifact
+        path:
+          type: string
+          description: Path to the artifact in the container
+        store:
+          type: string
+          description: Unique name of the registered store
+
+    Vars:
+      type: object
+      description: The key-value pairs of environment variables
+
+    Step:
+      type: object
+      required:
+        - cmd
+      properties:
+        cmd:
+          type: string
+          description: The command to execute
+        needs_resource:
+          type: string
+          description: Name of the resource to mount before execution
+        produces_artifact:
+          $ref: "#/components/schemas/Artifact"
+        vars:
+          $ref: "#/components/schemas/Vars"
+
+    Pipeline:
+      type: object
+      required:
+        - steps
+        - image
+      properties:
+        steps:
+          type: array
+          items:
+            $ref: "#/components/schemas/Step"
+          description: The list of steps to be executed sequentially
+        image:
+          type: string
+          description: The image to use, e.g. a docker or os image
+        vars:
+          $ref: "#/components/schemas/Vars"
+        resources:
+          type: array
+          items:
+            $ref: "#/components/schemas/Resource"
+          description: The list of declared resources
+
+    StringList:
+      type: array
+      items:
+        type: string
+
+    PipelineLogsResponse:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          $ref: "#/components/schemas/StringList"
+
+    PipelinesResponse:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: array
+          items:
+            $ref: "#/components/schemas/Pipeline"
+
+    PipelineRunsResponse:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: array
+          items:
+            type: object
+
+    StatusResponse:
+      type: object
+      required:
+        - message
+      properties:
+        schema:
+          $ref: "#/components/schemas/SimpleResponse"
+
+    ResourceProvidersResponse:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: array
+          items:
+            type: object
+
+    ResourceProviderAttributes:
+      type: object
+      required:
+        - url
+      properties:
+        url:
+          type: string
+          description: The reachable URL from Bob for the resource provider
+
+    ArtifactStoreAttributes:
+      type: object
+      required:
+        - url
+      properties:
+        url:
+          type: string
+          description: The reachable URL from Bob for the artifact store
+
+    ArtifactStoresResponse:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: array
+          items:
+            type: object
