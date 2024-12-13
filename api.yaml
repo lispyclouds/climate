@@ -120,6 +120,8 @@ paths:
       requestBody:
         description: The pipeline schema definition
         required: true
+        x-cli-aliases:
+          - schema
         content:
           application/json:
             schema:
@@ -245,6 +247,8 @@ paths:
 
       requestBody:
         description: Optional metadata map for runners. If provided must include runner/type
+        x-cli-aliases:
+          - meta
         content:
           application/json:
             schema:
@@ -712,6 +716,8 @@ paths:
       requestBody:
         description: The attributes of the resource provider
         required: true
+        x-cli-aliases:
+          - attrs
         content:
           application/json:
             schema:
@@ -821,6 +827,8 @@ paths:
       requestBody:
         description: The attributes of the artifact store
         required: true
+        x-cli-aliases:
+          - attrs
         content:
           application/json:
             schema:

@@ -109,12 +109,21 @@ func GenCliV3(model libopenapi.DocumentModel[v3.Document], handlers map[string]H
 			}
 
 			if body := op.RequestBody; body != nil {
+				// TODO: hammock on ways to handle the req bodies. Maybe take in a stdin?
+				bExts, err := parseExtensions(body.Extensions)
+				if err != nil {
+					return err
+				}
+
+				paramName := "cli-mate-data"
+				if aliases := bExts.aliases; len(bExts.aliases) > 0 {
+					paramName = aliases[0]
+				}
+
 				for mime, kind := range body.Content.FromOldest() {
 					switch kind.Schema.Schema().Type[0] {
 					case "object":
-						paramName := "cli-mate-data" // TODO: hammock on ways to handle the req bodies. Maybe take in a stdin?
-
-						flags.StringP(paramName, "f", "", body.Description)
+						flags.String(paramName, "", body.Description)
 						if req := body.Required; req != nil && *req {
 							cmd.MarkFlagRequired(paramName)
 						}
@@ -141,13 +150,14 @@ func GenCliV3(model libopenapi.DocumentModel[v3.Document], handlers map[string]H
 				cmd.Aliases = aliases[1:]
 			}
 
-			// TODO: what if there is no group?
 			if g := exts.group; g != "" {
 				_, ok := cmdGroups[g]
 				if !ok {
 					cmdGroups[g] = []cobra.Command{}
 				}
 				cmdGroups[g] = append(cmdGroups[g], cmd)
+			} else {
+				rootCmd.AddCommand(&cmd)
 			}
 		}
 	}
