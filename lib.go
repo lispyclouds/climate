@@ -20,12 +20,6 @@ type extensions struct {
 	group   string
 }
 
-func makeCobraHandler(hf Handler, method, path string) func(*cobra.Command, []string) {
-	return func(cmd *cobra.Command, _ []string) {
-		hf(cmd, method, path)
-	}
-}
-
 func parseExtensions(exts *orderedmap.Map[string, *yaml.Node]) (*extensions, error) {
 	ex := extensions{}
 	aliases := []string{}
@@ -89,21 +83,27 @@ func GenCliV3(rootCmd *cobra.Command, model libopenapi.DocumentModel[v3.Document
 			}
 
 			flags := cmd.Flags()
+
+		Loop:
 			for _, param := range op.Parameters {
 				// TODO: handle param.In
 				switch param.Schema.Schema().Type[0] {
 				case "string":
 					flags.String(param.Name, "", param.Description)
-					if req := param.Required; req != nil && *req {
-						cmd.MarkFlagRequired(param.Name)
-					}
 				case "integer":
 					flags.Int(param.Name, 0, param.Description)
-					if req := param.Required; req != nil && *req {
-						cmd.MarkFlagRequired(param.Name)
-					}
+				case "number":
+					flags.Float64(param.Name, 0.0, param.Description)
+				case "boolean":
+					flags.Bool(param.Name, false, param.Description)
 				default:
+					// TODO: array, object
 					slog.Warn("TODO: Unhandled param", "name", param.Name, "type", param.Schema.Schema().Type[0])
+					continue Loop
+				}
+
+				if req := param.Required; req != nil && *req {
+					cmd.MarkFlagRequired(param.Name)
 				}
 			}
 
@@ -115,7 +115,7 @@ func GenCliV3(rootCmd *cobra.Command, model libopenapi.DocumentModel[v3.Document
 				}
 
 				paramName := "cli-mate-data"
-				if aliases := bExts.aliases; len(bExts.aliases) > 0 {
+				if aliases := bExts.aliases; len(aliases) > 0 {
 					paramName = aliases[0]
 				}
 
@@ -141,7 +141,10 @@ func GenCliV3(rootCmd *cobra.Command, model libopenapi.DocumentModel[v3.Document
 			cmd.Hidden = exts.hidden
 			cmd.Use = op.OperationId
 			cmd.Short = op.Description
-			cmd.Run = makeCobraHandler(handler, method, path) // TODO: Interpolate path
+			cmd.Run = func(cmd *cobra.Command, _ []string) {
+				// TODO: Interpolate path
+				handler(cmd, method, path)
+			}
 
 			// TODO: hammock on better ways to handle aliases
 			if aliases := exts.aliases; len(exts.aliases) > 0 {
