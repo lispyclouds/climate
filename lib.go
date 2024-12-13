@@ -12,12 +12,18 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-type Handler func(*cobra.Command, []string)
+type Handler func(cmd *cobra.Command, method, path string)
 
 type extensions struct {
 	hidden  bool
 	aliases []string
 	group   string
+}
+
+func makeCobraHandler(hf Handler, method, path string) func(*cobra.Command, []string) {
+	return func(cmd *cobra.Command, _ []string) {
+		hf(cmd, method, path)
+	}
 }
 
 func parseExtensions(exts *orderedmap.Map[string, *yaml.Node]) (*extensions, error) {
@@ -75,13 +81,7 @@ func GenCliV3(rootCmd *cobra.Command, model libopenapi.DocumentModel[v3.Document
 	cmdGroups := make(map[string][]cobra.Command)
 
 	for path, item := range model.Model.Paths.PathItems.FromOldest() {
-		// TODO: use the path
-		_ = path
-
 		for method, op := range item.GetOperations().FromOldest() {
-			// TODO: use the method
-			_ = method
-
 			cmd := cobra.Command{}
 			exts, err := parseExtensions(op.Extensions)
 			if err != nil {
@@ -91,7 +91,6 @@ func GenCliV3(rootCmd *cobra.Command, model libopenapi.DocumentModel[v3.Document
 			flags := cmd.Flags()
 			for _, param := range op.Parameters {
 				// TODO: handle param.In
-				// TODO: handle param interpolation
 				switch param.Schema.Schema().Type[0] {
 				case "string":
 					flags.String(param.Name, "", param.Description)
@@ -142,7 +141,7 @@ func GenCliV3(rootCmd *cobra.Command, model libopenapi.DocumentModel[v3.Document
 			cmd.Hidden = exts.hidden
 			cmd.Use = op.OperationId
 			cmd.Short = op.Description
-			cmd.Run = handler
+			cmd.Run = makeCobraHandler(handler, method, path) // TODO: Interpolate path
 
 			// TODO: hammock on better ways to handle aliases
 			if aliases := exts.aliases; len(exts.aliases) > 0 {

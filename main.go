@@ -14,9 +14,8 @@ func bailIfErr(err error) {
 	}
 }
 
-// TODO: Should the handler be of a different sig?
-// func handler(cmd *cobra.Command, path, method string, data io.Reader) ?
-func handler(cmd *cobra.Command, args []string) {
+func handler(cmd *cobra.Command, method, path string) {
+	slog.Info("called!", "method", method, "path", path)
 }
 
 func main() {
