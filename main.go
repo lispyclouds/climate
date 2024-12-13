@@ -13,12 +13,13 @@ type Handler func(*cobra.Command, []string)
 
 func bailIfErr(err error) {
 	if err != nil {
-		fmt.Printf("Error: %e", err)
+		slog.Error("Error", "err", err)
 		os.Exit(1)
 	}
 }
 
 // TODO: Should the handler be of a different sig?
+// func handler(cmd *cobra.Command, path, method string, data io.Reader) ?
 func handler(cmd *cobra.Command, args []string) {
 }
 
@@ -45,31 +46,31 @@ func main() {
 	}
 
 	handlerMap := map[string]Handler{
-		"GetApiSpec":             handler,
-		"HealthCheck":            handler,
-		"PipelineCreate":         handler,
-		"PipelineDelete":         handler,
-		"PipelineStart":          handler,
-		"PipelineStop":           handler,
-		"PipelinePause":          handler,
-		"PipelineUnpause":        handler,
-		"PipelineLogs":           handler,
-		"PipelineStatus":         handler,
-		"PipelineArtifactFetch":  handler,
-		"PipelineList":           handler,
-		"PipelineRuns":           handler,
-		"ResourceProviderCreate": handler,
-		"ResourceProviderDelete": handler,
-		"ResourceProviderList":   handler,
 		"ArtifactStoreCreate":    handler,
 		"ArtifactStoreDelete":    handler,
 		"ArtifactStoreList":      handler,
+		"CCTray":                 handler,
+		"ClusterInfo":            handler,
+		"GetApiSpec":             handler,
 		"GetError":               handler,
 		"GetEvents":              handler,
 		"GetMetrics":             handler,
-		"CCTray":                 handler,
-		"ClusterInfo":            handler,
+		"HealthCheck":            handler,
+		"PipelineArtifactFetch":  handler,
+		"PipelineCreate":         handler,
+		"PipelineDelete":         handler,
+		"PipelineList":           handler,
+		"PipelineLogs":           handler,
+		"PipelinePause":          handler,
+		"PipelineRuns":           handler,
+		"PipelineStart":          handler,
+		"PipelineStatus":         handler,
+		"PipelineStop":           handler,
+		"PipelineUnpause":        handler,
 		"Query":                  handler,
+		"ResourceProviderCreate": handler,
+		"ResourceProviderDelete": handler,
+		"ResourceProviderList":   handler,
 	}
 
 	cmdGroups := make(map[string][]cobra.Command)
@@ -110,6 +111,8 @@ func main() {
 
 			flags := cmd.Flags()
 			for _, param := range op.Parameters {
+				// TODO: handle param.In
+				// TODO: handle param interpolation
 				switch param.Schema.Schema().Type[0] {
 				case "string":
 					flags.String(param.Name, "", param.Description)
