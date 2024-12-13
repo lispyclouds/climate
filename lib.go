@@ -7,10 +7,46 @@ import (
 
 	"github.com/pb33f/libopenapi"
 	v3 "github.com/pb33f/libopenapi/datamodel/high/v3"
+	"github.com/pb33f/libopenapi/orderedmap"
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v3"
 )
 
 type Handler func(*cobra.Command, []string)
+
+type extensions struct {
+	hidden  bool
+	aliases []string
+	group   string
+}
+
+func parseExtensions(exts *orderedmap.Map[string, *yaml.Node]) (*extensions, error) {
+	ex := extensions{}
+	aliases := []string{}
+
+	for ext, val := range exts.FromOldest() {
+		var opts any
+		if err := val.Decode(&opts); err != nil {
+			return nil, err
+		}
+
+		switch ext {
+		case "x-cli-hidden":
+			ex.hidden = opts.(bool)
+		case "x-cli-aliases":
+			for _, alias := range opts.([]any) {
+				aliases = append(aliases, alias.(string))
+			}
+			ex.aliases = aliases
+		case "x-cli-group":
+			ex.group = opts.(string)
+		default:
+			slog.Warn("TODO: Unhandled extension", "ext", ext, "opts", opts)
+		}
+	}
+
+	return &ex, nil
+}
 
 func LoadV3(data []byte) (*libopenapi.DocumentModel[v3.Document], error) {
 	document, err := libopenapi.NewDocument(data)
@@ -47,31 +83,9 @@ func GenCliV3(model libopenapi.DocumentModel[v3.Document], handlers map[string]H
 			_ = method
 
 			cmd := cobra.Command{}
-			groupName := ""
-			aliases := []string{}
-
-			for ext, val := range op.Extensions.FromOldest() {
-				var opts any
-				if err := val.Decode(&opts); err != nil {
-					return err
-				}
-
-				switch ext {
-				case "x-cli-hidden":
-					cmd.Hidden = opts.(bool)
-				case "x-cli-aliases":
-					for _, alias := range opts.([]any) {
-						aliases = append(aliases, alias.(string))
-					}
-				case "x-cli-group":
-					groupName = opts.(string)
-					_, ok := cmdGroups[groupName]
-					if !ok {
-						cmdGroups[groupName] = []cobra.Command{}
-					}
-				default:
-					slog.Warn("TODO: Unhandled extension", "ext", ext, "opts", opts)
-				}
+			exts, err := parseExtensions(op.Extensions)
+			if err != nil {
+				return err
 			}
 
 			flags := cmd.Flags()
@@ -116,17 +130,24 @@ func GenCliV3(model libopenapi.DocumentModel[v3.Document], handlers map[string]H
 				continue
 			}
 
+			cmd.Hidden = exts.hidden
 			cmd.Use = op.OperationId
-			// TODO: hammock on better ways to handle aliases
-			if len(aliases) > 0 {
-				cmd.Use = aliases[0]
-				cmd.Aliases = aliases[1:]
-			}
 			cmd.Short = op.Description
 			cmd.Run = handler
 
-			if groupName != "" {
-				cmdGroups[groupName] = append(cmdGroups[groupName], cmd)
+			// TODO: hammock on better ways to handle aliases
+			if aliases := exts.aliases; len(exts.aliases) > 0 {
+				cmd.Use = aliases[0]
+				cmd.Aliases = aliases[1:]
+			}
+
+			// TODO: what if there is no group?
+			if g := exts.group; g != "" {
+				_, ok := cmdGroups[g]
+				if !ok {
+					cmdGroups[g] = []cobra.Command{}
+				}
+				cmdGroups[g] = append(cmdGroups[g], cmd)
 			}
 		}
 	}
