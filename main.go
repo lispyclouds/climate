@@ -17,7 +17,7 @@ func bailIfErr(err error) {
 	}
 }
 
-func healthCheckHandler(cmd *cobra.Command, args []string) {
+func handler(cmd *cobra.Command, args []string) {
 }
 
 func main() {
@@ -43,31 +43,31 @@ func main() {
 	}
 
 	handlerMap := map[string]Handler{
-		"GetApiSpec":             healthCheckHandler,
-		"HealthCheck":            healthCheckHandler,
-		"PipelineCreate":         healthCheckHandler,
-		"PipelineDelete":         healthCheckHandler,
-		"PipelineStart":          healthCheckHandler,
-		"PipelineStop":           healthCheckHandler,
-		"PipelinePause":          healthCheckHandler,
-		"PipelineUnpause":        healthCheckHandler,
-		"PipelineLogs":           healthCheckHandler,
-		"PipelineStatus":         healthCheckHandler,
-		"PipelineArtifactFetch":  healthCheckHandler,
-		"PipelineList":           healthCheckHandler,
-		"PipelineRuns":           healthCheckHandler,
-		"ResourceProviderCreate": healthCheckHandler,
-		"ResourceProviderDelete": healthCheckHandler,
-		"ResourceProviderList":   healthCheckHandler,
-		"ArtifactStoreCreate":    healthCheckHandler,
-		"ArtifactStoreDelete":    healthCheckHandler,
-		"ArtifactStoreList":      healthCheckHandler,
-		"GetError":               healthCheckHandler,
-		"GetEvents":              healthCheckHandler,
-		"GetMetrics":             healthCheckHandler,
-		"CCTray":                 healthCheckHandler,
-		"ClusterInfo":            healthCheckHandler,
-		"Query":                  healthCheckHandler,
+		"GetApiSpec":             handler,
+		"HealthCheck":            handler,
+		"PipelineCreate":         handler,
+		"PipelineDelete":         handler,
+		"PipelineStart":          handler,
+		"PipelineStop":           handler,
+		"PipelinePause":          handler,
+		"PipelineUnpause":        handler,
+		"PipelineLogs":           handler,
+		"PipelineStatus":         handler,
+		"PipelineArtifactFetch":  handler,
+		"PipelineList":           handler,
+		"PipelineRuns":           handler,
+		"ResourceProviderCreate": handler,
+		"ResourceProviderDelete": handler,
+		"ResourceProviderList":   handler,
+		"ArtifactStoreCreate":    handler,
+		"ArtifactStoreDelete":    handler,
+		"ArtifactStoreList":      handler,
+		"GetError":               handler,
+		"GetEvents":              handler,
+		"GetMetrics":             handler,
+		"CCTray":                 handler,
+		"ClusterInfo":            handler,
+		"Query":                  handler,
 	}
 
 	cmdGroups := make(map[string][]cobra.Command)
@@ -149,6 +149,7 @@ func main() {
 			cmd.Use = op.OperationId
 			if len(aliases) > 0 {
 				cmd.Use = aliases[0]
+				cmd.Aliases = aliases[1:]
 			}
 			cmd.Short = op.Description
 			cmd.Run = handler

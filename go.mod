@@ -1,6 +1,8 @@
 module github.com/lispyclouds/cli-mate
 
-go 1.23.3
+go 1.23.0
+
+toolchain go1.23.4
 
 require (
 	github.com/pb33f/libopenapi v0.18.7
