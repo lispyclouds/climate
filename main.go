@@ -82,6 +82,7 @@ func main() {
 
 			cmd := cobra.Command{}
 			groupName := ""
+			aliases := []string{}
 
 			for ext, val := range op.Extensions.FromOldest() {
 				var opts any
@@ -91,11 +92,9 @@ func main() {
 				case "x-cli-hidden":
 					cmd.Hidden = opts.(bool)
 				case "x-cli-aliases":
-					var aliases []string
 					for _, alias := range opts.([]any) {
 						aliases = append(aliases, alias.(string))
 					}
-					cmd.Aliases = aliases
 				case "x-cli-group":
 					groupName = opts.(string)
 					_, ok := cmdGroups[groupName]
@@ -129,9 +128,11 @@ func main() {
 				for mime, kind := range body.Content.FromOldest() {
 					switch kind.Schema.Schema().Type[0] {
 					case "object":
-						flags.String("payload", "", body.Description)
+						paramName := "cli-mate-data"
+
+						flags.StringP(paramName, "f", "", body.Description)
 						if req := body.Required; req != nil && *req {
-							cmd.MarkFlagRequired("payload")
+							cmd.MarkFlagRequired(paramName)
 						}
 					default:
 						fmt.Printf("TODO: Unhandled request body with mime %s of type %v\n", mime, kind.Schema.Schema().Type[0])
@@ -146,6 +147,9 @@ func main() {
 			}
 
 			cmd.Use = op.OperationId
+			if len(aliases) > 0 {
+				cmd.Use = aliases[0]
+			}
 			cmd.Short = op.Description
 			cmd.Run = handler
 
@@ -168,5 +172,5 @@ func main() {
 		rootCmd.AddCommand(&groupedCmd)
 	}
 
-	bailIfErr(rootCmd.Execute())
+	rootCmd.Execute()
 }
