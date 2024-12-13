@@ -56,7 +56,7 @@ func main() {
 		"ResourceProviderList":   handler,
 	}
 
-	bailIfErr(GenCliV3(*model, handlers, &rootCmd))
+	bailIfErr(GenCliV3(&rootCmd, *model, handlers))
 
 	rootCmd.Execute()
 }

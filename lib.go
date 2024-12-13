@@ -71,7 +71,7 @@ func LoadFileV3(path string) (*libopenapi.DocumentModel[v3.Document], error) {
 	return LoadV3(data)
 }
 
-func GenCliV3(model libopenapi.DocumentModel[v3.Document], handlers map[string]Handler, rootCmd *cobra.Command) error {
+func GenCliV3(rootCmd *cobra.Command, model libopenapi.DocumentModel[v3.Document], handlers map[string]Handler) error {
 	cmdGroups := make(map[string][]cobra.Command)
 
 	for path, item := range model.Model.Paths.PathItems.FromOldest() {
