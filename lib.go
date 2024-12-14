@@ -13,8 +13,11 @@ import (
 )
 
 type HandlerData struct {
-	Method string
-	Path   string
+	Method           string
+	Path             string
+	PathParams       []string
+	QueryParams      []string
+	RequestBodyParam string
 }
 
 type Handler func(opts *cobra.Command, args []string, data HandlerData)
@@ -93,9 +96,10 @@ func BootstrapV3(rootCmd *cobra.Command, model libopenapi.DocumentModel[v3.Docum
 			}
 
 			flags := cmd.Flags()
+			queryParams, pathParams := []string{}, []string{}
+			hData := HandlerData{Method: method, Path: path}
 
 			for _, param := range op.Parameters {
-				// TODO: handle param.In
 				switch param.Schema.Schema().Type[0] {
 				case "string":
 					flags.String(param.Name, "", param.Description)
@@ -111,10 +115,20 @@ func BootstrapV3(rootCmd *cobra.Command, model libopenapi.DocumentModel[v3.Docum
 					continue
 				}
 
+				switch param.In {
+				case "path":
+					pathParams = append(pathParams, param.Name)
+				case "query":
+					queryParams = append(queryParams, param.Name)
+				}
+
 				if req := param.Required; req != nil && *req {
 					cmd.MarkFlagRequired(param.Name)
 				}
 			}
+
+			hData.QueryParams = queryParams
+			hData.PathParams = pathParams
 
 			if body := op.RequestBody; body != nil {
 				// TODO: hammock on ways to handle the req bodies. Maybe take in a stdin?
@@ -127,6 +141,8 @@ func BootstrapV3(rootCmd *cobra.Command, model libopenapi.DocumentModel[v3.Docum
 				if aliases := bExts.aliases; len(aliases) > 0 {
 					paramName = aliases[0]
 				}
+
+				hData.RequestBodyParam = paramName
 
 				for mime, kind := range body.Content.FromOldest() {
 					switch kind.Schema.Schema().Type[0] {
@@ -154,7 +170,7 @@ func BootstrapV3(rootCmd *cobra.Command, model libopenapi.DocumentModel[v3.Docum
 			}
 			cmd.Run = func(opts *cobra.Command, args []string) {
 				// TODO: Interpolate path
-				handler(opts, args, HandlerData{Method: method, Path: path})
+				handler(opts, args, hData)
 			}
 
 			// TODO: hammock on better ways to handle aliases, prefers the first one as of now

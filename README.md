@@ -13,7 +13,6 @@ Experimental, in dev flux and looking for design/usage feedback!
 
 ### TODO:
 - Interpolate the HTTP paths when sending to the handler with the path params
-- Group params and values based on path, query or body when sending to the handler
 - Support more of the OpenAPI types and their checks. eg arrays, enums, objects, multi types etc
 
 ### Installation
@@ -82,7 +81,7 @@ paths:
         - ap
 
       requestBody:
-        description: The numebers map
+        description: The numbers map
         required: true
         x-cli-aliases:
           - nmap
