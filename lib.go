@@ -12,12 +12,19 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+type ParamMeta struct {
+	Name string
+	Type string // Same as the type name in OpenAPI
+}
+
 type HandlerData struct {
-	Method           string
-	Path             string
-	PathParams       []string
-	QueryParams      []string
-	RequestBodyParam string
+	Method           string      // the HTTP method
+	Path             string      // the parameterised path
+	PathParams       []ParamMeta // List of path params
+	QueryParams      []ParamMeta // List of query params
+	HeaderParams     []ParamMeta // List of header params
+	CookieParams     []ParamMeta // List of cookie params
+	RequestBodyParam ParamMeta   // The request body
 }
 
 type Handler func(opts *cobra.Command, args []string, data HandlerData)
@@ -57,6 +64,7 @@ func parseExtensions(exts *orderedmap.Map[string, *yaml.Node]) (*extensions, err
 	return &ex, nil
 }
 
+// Loads and verifies an OpenAPI spec frpm an array of bytes
 func LoadV3(data []byte) (*libopenapi.DocumentModel[v3.Document], error) {
 	document, err := libopenapi.NewDocument(data)
 	if err != nil {
@@ -71,6 +79,7 @@ func LoadV3(data []byte) (*libopenapi.DocumentModel[v3.Document], error) {
 	return model, nil
 }
 
+// Loads and verifies an OpenAPI spec from a file path
 func LoadFileV3(path string) (*libopenapi.DocumentModel[v3.Document], error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -80,6 +89,7 @@ func LoadFileV3(path string) (*libopenapi.DocumentModel[v3.Document], error) {
 	return LoadV3(data)
 }
 
+// Bootstraps a cobra.Command with the loaded model and a handler map
 func BootstrapV3(rootCmd *cobra.Command, model libopenapi.DocumentModel[v3.Document], handlers map[string]Handler) error {
 	cmdGroups := make(map[string][]cobra.Command)
 
@@ -96,11 +106,16 @@ func BootstrapV3(rootCmd *cobra.Command, model libopenapi.DocumentModel[v3.Docum
 			}
 
 			flags := cmd.Flags()
-			queryParams, pathParams := []string{}, []string{}
+			queryParams := []ParamMeta{}
+			pathParams := []ParamMeta{}
+			headerParams := []ParamMeta{}
+			cookieParams := []ParamMeta{}
 			hData := HandlerData{Method: method, Path: path}
 
 			for _, param := range op.Parameters {
-				switch param.Schema.Schema().Type[0] {
+				t := param.Schema.Schema().Type[0]
+
+				switch t {
 				case "string":
 					flags.String(param.Name, "", param.Description)
 				case "integer":
@@ -115,11 +130,16 @@ func BootstrapV3(rootCmd *cobra.Command, model libopenapi.DocumentModel[v3.Docum
 					continue
 				}
 
+				meta := ParamMeta{Name: param.Name, Type: t}
 				switch param.In {
 				case "path":
-					pathParams = append(pathParams, param.Name)
+					pathParams = append(pathParams, meta)
 				case "query":
-					queryParams = append(queryParams, param.Name)
+					queryParams = append(queryParams, meta)
+				case "header":
+					headerParams = append(headerParams, meta)
+				case "cookie":
+					cookieParams = append(cookieParams, meta)
 				}
 
 				if req := param.Required; req != nil && *req {
@@ -129,6 +149,8 @@ func BootstrapV3(rootCmd *cobra.Command, model libopenapi.DocumentModel[v3.Docum
 
 			hData.QueryParams = queryParams
 			hData.PathParams = pathParams
+			hData.HeaderParams = headerParams
+			hData.CookieParams = cookieParams
 
 			if body := op.RequestBody; body != nil {
 				// TODO: hammock on ways to handle the req bodies. Maybe take in a stdin?
@@ -142,10 +164,11 @@ func BootstrapV3(rootCmd *cobra.Command, model libopenapi.DocumentModel[v3.Docum
 					paramName = aliases[0]
 				}
 
-				hData.RequestBodyParam = paramName
-
 				for mime, kind := range body.Content.FromOldest() {
-					switch kind.Schema.Schema().Type[0] {
+					t := kind.Schema.Schema().Type[0]
+					hData.RequestBodyParam = ParamMeta{Name: paramName, Type: t}
+
+					switch t {
 					case "object":
 						flags.String(paramName, "", body.Description)
 						if req := body.Required; req != nil && *req {

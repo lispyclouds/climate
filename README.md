@@ -14,6 +14,7 @@ Experimental, in dev flux and looking for design/usage feedback!
 ### TODO:
 - Interpolate the HTTP paths when sending to the handler with the path params
 - Support more of the OpenAPI types and their checks. eg arrays, enums, objects, multi types etc
+- Much better unit tests touching just the public fns and assert shape
 
 ### Installation
 
@@ -143,6 +144,41 @@ Define one or more handler functions of the following signature:
 func handler(opts *cobra.Command, args []string, data climate.HandlerData) {
     // do something more useful
     slog.Info("called!", "data", fmt.Sprintf("%+v", data))
+}
+```
+#### Handler Data
+
+(Feedback welcome to make this better!)
+
+As of now, each handler is called with the cobra command it was invoked with, the args and an extra `climate.HandlerData`
+
+The handler data is of the following structure:
+```go
+type ParamMeta struct {
+	Name string
+	Type string // Same as the type name in OpenAPI
+}
+
+type HandlerData struct {
+	Method           string      // the HTTP method
+	Path             string      // the parameterised path
+	PathParams       []ParamMeta // List of path params
+	QueryParams      []ParamMeta // List of query params
+	HeaderParams     []ParamMeta // List of header params
+	CookieParams     []ParamMeta // List of cookie params
+	RequestBodyParam ParamMeta   // The request body
+}
+```
+
+This can be used to query the params from the command mostly in a type safe manner:
+
+```go
+// to get all the int path params
+
+for _, param := range data.PathParams {
+    if param.Type == "integer" {
+        value, _ := opts.Flags().GetInt(param.Name)
+    }
 }
 ```
 
