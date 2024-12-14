@@ -1,4 +1,4 @@
-module github.com/lispyclouds/cli-mate
+module github.com/lispyclouds/climate
 
 go 1.23.0
 

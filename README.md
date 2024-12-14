@@ -1,4 +1,4 @@
-# cli-mate
+# climate
 
 Go is a fantastic language to build CLI tooling, specially the ones for interacting with an API server. `<your tool>ctl` anyone?
 

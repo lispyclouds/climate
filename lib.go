@@ -123,7 +123,7 @@ func BootstrapV3(rootCmd *cobra.Command, model libopenapi.DocumentModel[v3.Docum
 					return err
 				}
 
-				paramName := "cli-mate-data"
+				paramName := "climate-data"
 				if aliases := bExts.aliases; len(aliases) > 0 {
 					paramName = aliases[0]
 				}
