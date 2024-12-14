@@ -143,6 +143,9 @@ func BootstrapV3(rootCmd *cobra.Command, model libopenapi.DocumentModel[v3.Docum
 
 			cmd.Hidden = exts.hidden
 			cmd.Short = op.Description
+			if op.Summary != "" {
+				cmd.Short = op.Summary
+			}
 			cmd.Run = func(opts *cobra.Command, args []string) {
 				// TODO: Interpolate path
 				handler(opts, args, HandlerData{Method: method, Path: path})

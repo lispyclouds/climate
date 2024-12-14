@@ -6,9 +6,10 @@ import (
 	"testing"
 
 	"github.com/spf13/cobra"
+	"github.com/stretchr/testify/assert"
 )
 
-func TestLoadV3(t *testing.T) {
+func TestLoadFileV3(t *testing.T) {
 	_, err := LoadFileV3("api.yaml")
 	if err != nil {
 		t.Fatalf("LoadFileV3 failed with: %e", err)
@@ -25,40 +26,37 @@ func TestBootstrapV3(t *testing.T) {
 		slog.Info("called!", "data", fmt.Sprintf("%+v", data))
 	}
 	rootCmd := cobra.Command{
-		Use:   "bctl",
-		Short: "Bob CLI",
-		Long:  "This is Bob's CLI mate!",
+		Use:   "calc",
+		Short: "My Calc",
+		Long:  "My Calc powered by OpenAPI",
 	}
 	handlers := map[string]Handler{
-		"ArtifactStoreCreate":    handler,
-		"ArtifactStoreDelete":    handler,
-		"ArtifactStoreList":      handler,
-		"CCTray":                 handler,
-		"ClusterInfo":            handler,
-		"GetApiSpec":             handler,
-		"GetError":               handler,
-		"GetEvents":              handler,
-		"GetMetrics":             handler,
-		"HealthCheck":            handler,
-		"PipelineArtifactFetch":  handler,
-		"PipelineCreate":         handler,
-		"PipelineDelete":         handler,
-		"PipelineList":           handler,
-		"PipelineLogs":           handler,
-		"PipelinePause":          handler,
-		"PipelineRuns":           handler,
-		"PipelineStart":          handler,
-		"PipelineStatus":         handler,
-		"PipelineStop":           handler,
-		"PipelineUnpause":        handler,
-		"Query":                  handler,
-		"ResourceProviderCreate": handler,
-		"ResourceProviderDelete": handler,
-		"ResourceProviderList":   handler,
+		"AddGet":      handler,
+		"AddPost":     handler,
+		"HealthCheck": handler,
+		"GetMeta":     handler,
 	}
 
 	err = BootstrapV3(&rootCmd, *model, handlers)
 	if err != nil {
 		t.Fatalf("BootstrapV3 failed with: %e", err)
 	}
+
+	names := []string{}
+	for _, cmd := range rootCmd.Commands() {
+		names = append(names, cmd.Name())
+	}
+	assert.Contains(t, names, "ops")
+	assert.Contains(t, names, "ping")
+
+	names = []string{}
+	for _, cmd := range rootCmd.Commands() {
+		if cmd.Name() == "ops" {
+			for _, subCmd := range cmd.Commands() {
+				names = append(names, subCmd.Name())
+			}
+		}
+	}
+	assert.Contains(t, names, "add-get")
+	assert.Contains(t, names, "add-post")
 }
