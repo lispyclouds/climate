@@ -12,7 +12,12 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-type Handler func(cmd *cobra.Command, method, path string)
+type HandlerData struct {
+	Method string
+	Path   string
+}
+
+type Handler func(opts *cobra.Command, args []string, data HandlerData)
 
 type extensions struct {
 	hidden  bool
@@ -71,7 +76,7 @@ func LoadFileV3(path string) (*libopenapi.DocumentModel[v3.Document], error) {
 	return LoadV3(data)
 }
 
-func GenCliV3(rootCmd *cobra.Command, model libopenapi.DocumentModel[v3.Document], handlers map[string]Handler) error {
+func BootstrapV3(rootCmd *cobra.Command, model libopenapi.DocumentModel[v3.Document], handlers map[string]Handler) error {
 	cmdGroups := make(map[string][]cobra.Command)
 
 	for path, item := range model.Model.Paths.PathItems.FromOldest() {
@@ -139,14 +144,14 @@ func GenCliV3(rootCmd *cobra.Command, model libopenapi.DocumentModel[v3.Document
 			}
 
 			cmd.Hidden = exts.hidden
-			cmd.Use = op.OperationId
 			cmd.Short = op.Description
-			cmd.Run = func(cmd *cobra.Command, _ []string) {
+			cmd.Run = func(opts *cobra.Command, args []string) {
 				// TODO: Interpolate path
-				handler(cmd, method, path)
+				handler(opts, args, HandlerData{Method: method, Path: path})
 			}
 
 			// TODO: hammock on better ways to handle aliases
+			cmd.Use = op.OperationId // default
 			if aliases := exts.aliases; len(exts.aliases) > 0 {
 				cmd.Use = aliases[0]
 				cmd.Aliases = aliases[1:]

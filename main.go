@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log/slog"
 	"os"
 
@@ -14,8 +15,8 @@ func bailIfErr(err error) {
 	}
 }
 
-func handler(cmd *cobra.Command, method, path string) {
-	slog.Info("called!", "method", method, "path", path)
+func handler(opts *cobra.Command, args []string, data HandlerData) {
+	slog.Info("called!", "data", fmt.Sprintf("%+v", data))
 }
 
 func main() {
@@ -55,7 +56,7 @@ func main() {
 		"ResourceProviderList":   handler,
 	}
 
-	bailIfErr(GenCliV3(&rootCmd, *model, handlers))
+	bailIfErr(BootstrapV3(&rootCmd, *model, handlers))
 
 	rootCmd.Execute()
 }
