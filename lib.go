@@ -45,8 +45,6 @@ func parseExtensions(exts *orderedmap.Map[string, *yaml.Node]) (*extensions, err
 			ex.aliases = aliases
 		case "x-cli-group":
 			ex.group = opts.(string)
-		default:
-			slog.Warn("TODO: Unhandled extension", "ext", ext, "opts", opts)
 		}
 	}
 
@@ -132,7 +130,7 @@ func BootstrapV3(rootCmd *cobra.Command, model libopenapi.DocumentModel[v3.Docum
 							cmd.MarkFlagRequired(paramName)
 						}
 					default:
-						slog.Warn("TODO: Unhandled request body", "mime", mime, "type", kind.Schema.Schema().Type[0])
+						slog.Warn("TODO: Unhandled request body type", "mime", mime, "type", kind.Schema.Schema().Type[0])
 					}
 				}
 			}
@@ -150,7 +148,7 @@ func BootstrapV3(rootCmd *cobra.Command, model libopenapi.DocumentModel[v3.Docum
 				handler(opts, args, HandlerData{Method: method, Path: path})
 			}
 
-			// TODO: hammock on better ways to handle aliases
+			// TODO: hammock on better ways to handle aliases, prefers the first one as of now
 			cmd.Use = op.OperationId // default
 			if aliases := exts.aliases; len(exts.aliases) > 0 {
 				cmd.Use = aliases[0]
