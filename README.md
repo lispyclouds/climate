@@ -1,9 +1,173 @@
 # climate
 
 Go is a fantastic language to build CLI tooling, specially the ones for interacting with an API server. `<your tool>ctl` anyone?
-
 But if you're tired of building bespoke CLIs everytime or think that the swagger codegen isn't just good enough, look no further.
 
-What if you can influence the CLI behaviour from the server?
+What if you can influence the CLI behaviour from the server? This enables you to bootstrap your [cobra](https://cobra.dev/) CLI tooling from an [OpenAPI](https://swagger.io/specification/) spec.
 
-## Docs coming soon, work in progress.
+## Getting started
+
+### Status
+
+Experimental, in dev flux and looking for design/usage feedback!
+
+### Installation
+
+```bash
+go get github.com/lispyclouds/climate
+```
+
+### How it works and usage
+
+climate allows the server to influence the CLI behaviour by using OpenAPI's [extensions](https://swagger.io/docs/specification/v3_0/openapi-extensions/). It encourages [spec-first](https://www.atlassian.com/blog/technology/spec-first-api-development) practices thereby keeping both users and maintenance manageable. It does just enough to handle the spec and nothing more.
+
+Overall, the way it works:
+- Each operation is converted to a Cobra command
+- Each parameter is converted to a flag with its corresponding type
+- Request bodies are a flag as of now, subject to change
+- The provided handlers are attached to each command, grouped and attached to the rootCmd
+
+Influenced by some of the ideas behind [restish](https://rest.sh/) it uses the following extensions as of now:
+- `x-cli-aliases`: A list of strings which would be used as the alternate names for:
+  - Operations: If set, will prefer the first of the list otherwise the `operationId`. Will use the rest as cobra aliases
+  - Request Body: Same preference as above but would a default of `climate-data` as the name of the param if not set
+- `x-cli-group`: A string to allow grouping subcommands together. All operations in the same group would become subcommands in that group name
+- `x-cli-hidden`: A boolean to hide the operation from the CLI menu. Same behaviour as a cobra command hide: it's present and expects a handler
+- `x-cli-ignored`: A boolean to tell climate to omit the operation completely
+
+Given an OpenAPI spec in `api.yaml`:
+
+```yaml
+openapi: "3.0.0"
+
+info:
+  title: My calculator
+  version: "0.1.0"
+  description: My awesome calc!
+
+paths:
+  "/add/{n1}/{n2}":
+    get:
+      operationId: AddGet
+      summary: Adds two numbers
+      x-cli-group: ops
+      x-cli-aliases:
+        - add-get
+        - ag
+
+      parameters:
+        - name: n1
+          required: true
+          in: path
+          description: The first number
+          schema:
+            type: integer
+        - name: n2
+          required: true
+          in: path
+          description: The second number
+          schema:
+            type: integer
+    post:
+      operationId: AddPost
+      summary: Adds two numbers via POST
+      x-cli-group: ops
+      x-cli-aliases:
+        - add-post
+        - ap
+
+      requestBody:
+        description: The numebers map
+        required: true
+        x-cli-aliases:
+          - nmap
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NumbersMap"
+  "/health":
+    get:
+      operationId: HealthCheck
+      summary: Returns Ok if all is well
+      x-cli-aliases:
+        - ping
+  "/meta":
+    get:
+      operationId: GetMeta
+      summary: Returns meta
+      x-cli-ignored: true
+  "/info":
+    get:
+      operationId: GetInfo
+      summary: Returns info
+      x-cli-group: info
+
+components:
+  schemas:
+    NumbersMap:
+      type: object
+      required:
+        - n1
+        - n2
+      properties:
+        n1:
+          type: integer
+          description: The first number
+        n2:
+          type: integer
+          description: The second number
+```
+
+Load the spec:
+
+```go
+model, err := climate.LoadFileV3("api.yaml") // or climate.LoadV3 with []byte
+```
+
+Define a cobra root command:
+
+```go
+rootCmd := &cobra.Command{
+    Use:   "calc",
+    Short: "My Calc",
+    Long:  "My Calc powered by OpenAPI",
+}
+```
+
+Define one or more handler functions of the following signature:
+```go
+func handler(opts *cobra.Command, args []string, data climate.HandlerData) {
+    // do something more useful
+    slog.Info("called!", "data", fmt.Sprintf("%+v", data))
+}
+```
+
+Define the handlers for the necessary operations. These map to the `operationId` field of each operation:
+
+```go
+handlers := map[string]Handler{
+    "AddGet":      handler,
+    "AddPost":     handler,
+    "HealthCheck": handler,
+    "GetInfo":     handler,
+}
+```
+
+Bootstrap the root command:
+
+```go
+err := climate.BootstrapV3(rootCmd, *model, handlers)
+```
+
+Continue adding more commands and/or execute:
+
+```go
+// add more commands not from the spec
+
+rootCmd.Execute()
+```
+
+## License
+Copyright © 2024- Rahul De
+
+Distributed under the MIT License. See LICENSE.
