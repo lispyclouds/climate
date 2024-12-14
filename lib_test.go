@@ -16,6 +16,15 @@ func TestLoadFileV3(t *testing.T) {
 	}
 }
 
+func checkCmdNames(t *testing.T, cmd *cobra.Command, names ...string) {
+	actual := []string{}
+	for _, cmd := range cmd.Commands() {
+		actual = append(actual, cmd.Name())
+	}
+
+	assert.Subset(t, names, actual)
+}
+
 func TestBootstrapV3(t *testing.T) {
 	model, err := LoadFileV3("api.yaml")
 	if err != nil {
@@ -25,7 +34,7 @@ func TestBootstrapV3(t *testing.T) {
 	handler := func(opts *cobra.Command, args []string, data HandlerData) {
 		slog.Info("called!", "data", fmt.Sprintf("%+v", data))
 	}
-	rootCmd := cobra.Command{
+	rootCmd := &cobra.Command{
 		Use:   "calc",
 		Short: "My Calc",
 		Long:  "My Calc powered by OpenAPI",
@@ -34,29 +43,23 @@ func TestBootstrapV3(t *testing.T) {
 		"AddGet":      handler,
 		"AddPost":     handler,
 		"HealthCheck": handler,
-		"GetMeta":     handler,
+		"GetInfo":     handler,
 	}
 
-	err = BootstrapV3(&rootCmd, *model, handlers)
+	err = BootstrapV3(rootCmd, *model, handlers)
 	if err != nil {
 		t.Fatalf("BootstrapV3 failed with: %e", err)
 	}
 
-	names := []string{}
-	for _, cmd := range rootCmd.Commands() {
-		names = append(names, cmd.Name())
-	}
-	assert.Contains(t, names, "ops")
-	assert.Contains(t, names, "ping")
+	checkCmdNames(t, rootCmd, "ops", "ping", "info")
 
-	names = []string{}
+	var subCmd *cobra.Command
 	for _, cmd := range rootCmd.Commands() {
 		if cmd.Name() == "ops" {
-			for _, subCmd := range cmd.Commands() {
-				names = append(names, subCmd.Name())
-			}
+			subCmd = cmd
+			break
 		}
 	}
-	assert.Contains(t, names, "add-get")
-	assert.Contains(t, names, "add-post")
+
+	checkCmdNames(t, subCmd, "add-get", "add-post")
 }

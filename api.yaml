@@ -54,8 +54,13 @@ paths:
   "/meta":
     get:
       operationId: GetMeta
-      summary: Returns Ok if all is well
-      x-cli-hidden: true
+      summary: Returns meta
+      x-cli-ignored: true
+  "/info":
+    get:
+      operationId: GetInfo
+      summary: Returns info
+      x-cli-group: info
 
 components:
   schemas:

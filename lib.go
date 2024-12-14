@@ -23,6 +23,7 @@ type extensions struct {
 	hidden  bool
 	aliases []string
 	group   string
+	ignored bool
 }
 
 func parseExtensions(exts *orderedmap.Map[string, *yaml.Node]) (*extensions, error) {
@@ -45,6 +46,8 @@ func parseExtensions(exts *orderedmap.Map[string, *yaml.Node]) (*extensions, err
 			ex.aliases = aliases
 		case "x-cli-group":
 			ex.group = opts.(string)
+		case "x-cli-ignored":
+			ex.ignored = opts.(bool)
 		}
 	}
 
@@ -85,9 +88,12 @@ func BootstrapV3(rootCmd *cobra.Command, model libopenapi.DocumentModel[v3.Docum
 				return err
 			}
 
+			if exts.ignored {
+				continue
+			}
+
 			flags := cmd.Flags()
 
-		Loop:
 			for _, param := range op.Parameters {
 				// TODO: handle param.In
 				switch param.Schema.Schema().Type[0] {
@@ -102,7 +108,7 @@ func BootstrapV3(rootCmd *cobra.Command, model libopenapi.DocumentModel[v3.Docum
 				default:
 					// TODO: array, object
 					slog.Warn("TODO: Unhandled param", "name", param.Name, "type", param.Schema.Schema().Type[0])
-					continue Loop
+					continue
 				}
 
 				if req := param.Required; req != nil && *req {
@@ -137,7 +143,7 @@ func BootstrapV3(rootCmd *cobra.Command, model libopenapi.DocumentModel[v3.Docum
 
 			handler, ok := handlers[op.OperationId]
 			if !ok {
-				slog.Warn("TODO: Unknown op, skipping", "id", op.OperationId)
+				slog.Warn("Ho handler defined, skipping", "id", op.OperationId)
 				continue
 			}
 
