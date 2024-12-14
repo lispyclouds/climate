@@ -11,6 +11,11 @@ What if you can influence the CLI behaviour from the server? This enables you to
 
 Experimental, in dev flux and looking for design/usage feedback!
 
+### TODO:
+- Interpolate the HTTP paths when sending to the handler with the path params
+- Group params and values based on path, query or body when sending to the handler
+- Support more of the OpenAPI types and their checks. eg arrays, enums, objects, multi types etc
+
 ### Installation
 
 ```bash
@@ -165,6 +170,73 @@ Continue adding more commands and/or execute:
 // add more commands not from the spec
 
 rootCmd.Execute()
+```
+
+Sample output:
+
+```
+$ go run main.go --help
+My Calc powered by OpenAPI
+
+Usage:
+  calc [command]
+
+Available Commands:
+  completion  Generate the autocompletion script for the specified shell
+  help        Help about any command
+  info        Operations on info
+  ops         Operations on ops
+  ping        Returns Ok if all is well
+
+Flags:
+  -h, --help   help for calc
+
+Use "calc [command] --help" for more information about a command.
+
+$ go run main.go ops --help
+Operations on ops
+
+Usage:
+  calc ops [command]
+
+Available Commands:
+  add-get     Adds two numbers
+  add-post    Adds two numbers via POST
+
+Flags:
+  -h, --help   help for ops
+
+Use "calc ops [command] --help" for more information about a command.
+
+$ go run main.go ops add-get --help
+Adds two numbers
+
+Usage:
+  calc ops add-get [flags]
+
+Aliases:
+  add-get, ag
+
+Flags:
+  -h, --help     help for add-get
+      --n1 int   The first number
+      --n2 int   The second number
+
+$ go run main.go ops add-get --n1 1 --n2 foo
+Error: invalid argument "foo" for "--n2" flag: strconv.ParseInt: parsing "foo": invalid syntax
+Usage:
+  calc ops add-get [flags]
+
+Aliases:
+  add-get, ag
+
+Flags:
+  -h, --help     help for add-get
+      --n1 int   The first number
+      --n2 int   The second number
+
+$ go run main.go ops add-get --n1 1 --n2 2
+2024/12/14 12:53:32 INFO called! data="{Method:get Path:/add/{n1}/{n2}}"
 ```
 
 ## License
