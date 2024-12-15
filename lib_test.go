@@ -27,6 +27,27 @@ func assertCmdTree(t *testing.T, cmd *cobra.Command, assertConf map[string]map[s
 	assert.Equal(t, expected["Short"], cmd.Short)
 	assert.Equal(t, expected["Aliases"], cmd.Aliases)
 
+	expectedFlags, ok := expected["Flags"]
+	if ok {
+		for name, info := range expectedFlags.(map[string]any) {
+			typ := OpenAPIType(info.(map[string]OpenAPIType)["Type"])
+			var err error
+
+			switch typ {
+			case String:
+				_, err = cmd.Flags().GetString(name)
+			case Integer:
+				_, err = cmd.Flags().GetInt(name)
+			case Number:
+				_, err = cmd.Flags().GetFloat64(name)
+			case Boolean:
+				_, err = cmd.Flags().GetBool(name)
+			}
+
+			assert.NoError(t, err, fmt.Sprintf("Flag: %s Type: %s", name, typ))
+		}
+	}
+
 	for _, subCmd := range cmd.Commands() {
 		assertCmdTree(t, subCmd, assertConf, prefix+"/"+subCmd.Use)
 	}
@@ -58,7 +79,7 @@ func TestBootstrapV3(t *testing.T) {
 		t.Fatalf("BootstrapV3 failed with: %e", err)
 	}
 
-	noAlias := []string(nil)
+	var noAlias []string
 	assertConf := map[string]map[string]any{
 		"calc": {
 			"Use":     "calc",
@@ -84,11 +105,24 @@ func TestBootstrapV3(t *testing.T) {
 			"Use":     "add-get",
 			"Short":   "Adds two numbers",
 			"Aliases": []string{"ag"},
+			"Flags": map[string]any{
+				"n1": map[string]OpenAPIType{
+					"Type": Integer,
+				},
+				"n2": map[string]OpenAPIType{
+					"Type": Integer,
+				},
+			},
 		},
 		"calc/ops/add-post": {
 			"Use":     "add-post",
 			"Short":   "Adds two numbers via POST",
 			"Aliases": []string{"ap"},
+			"Flags": map[string]any{
+				"nmap": map[string]OpenAPIType{
+					"Type": String,
+				},
+			},
 		},
 		"calc/ping": {
 			"Use":     "ping",
