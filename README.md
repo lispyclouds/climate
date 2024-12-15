@@ -25,106 +25,26 @@ Experimental, in dev flux and looking for design/usage feedback!
 go get github.com/lispyclouds/climate
 ```
 
-### How it works and usage
+### Rationale
 
 climate allows the server to influence the CLI behaviour by using OpenAPI's [extensions](https://swagger.io/docs/specification/v3_0/openapi-extensions/). It encourages [spec-first](https://www.atlassian.com/blog/technology/spec-first-api-development) practices thereby keeping both users and maintenance manageable. It does just enough to handle the spec and nothing more.
 
 Overall, the way it works:
 - Each operation is converted to a Cobra command
 - Each parameter is converted to a flag with its corresponding type
-- Request bodies are a flag as of now, subject to change
+- Request bodies are a flag as of now, subject to change. Name defaults to `climate-data` unless specified via `x-cli-name`
 - The provided handlers are attached to each command, grouped and attached to the rootCmd
 
 Influenced by some of the ideas behind [restish](https://rest.sh/) it uses the following extensions as of now:
-- `x-cli-aliases`: A list of strings which would be used as the alternate names for:
-  - Operations: If set, will prefer the first of the list otherwise the `operationId`. Will use the rest as cobra aliases
-  - Request Body: Same preference as above but would a default of `climate-data` as the name of the param if not set
+- `x-cli-aliases`: A list of strings which would be used as the alternate names for an operation
 - `x-cli-group`: A string to allow grouping subcommands together. All operations in the same group would become subcommands in that group name
 - `x-cli-hidden`: A boolean to hide the operation from the CLI menu. Same behaviour as a cobra command hide: it's present and expects a handler
 - `x-cli-ignored`: A boolean to tell climate to omit the operation completely
+- `x-cli-name`: A string to specify a different name. Applies to operations and request bodies as of now
 
-Given an OpenAPI spec in `api.yaml`:
+### Usage
 
-```yaml
-openapi: "3.0.0"
-
-info:
-  title: My calculator
-  version: "0.1.0"
-  description: My awesome calc!
-
-paths:
-  "/add/{n1}/{n2}":
-    get:
-      operationId: AddGet
-      summary: Adds two numbers
-      x-cli-group: ops
-      x-cli-aliases:
-        - add-get
-        - ag
-
-      parameters:
-        - name: n1
-          required: true
-          in: path
-          description: The first number
-          schema:
-            type: integer
-        - name: n2
-          required: true
-          in: path
-          description: The second number
-          schema:
-            type: integer
-    post:
-      operationId: AddPost
-      summary: Adds two numbers via POST
-      x-cli-group: ops
-      x-cli-aliases:
-        - add-post
-        - ap
-
-      requestBody:
-        description: The numbers map
-        required: true
-        x-cli-aliases:
-          - nmap
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/NumbersMap"
-  "/health":
-    get:
-      operationId: HealthCheck
-      summary: Returns Ok if all is well
-      x-cli-aliases:
-        - ping
-  "/meta":
-    get:
-      operationId: GetMeta
-      summary: Returns meta
-      x-cli-ignored: true
-  "/info":
-    get:
-      operationId: GetInfo
-      summary: Returns info
-      x-cli-group: info
-
-components:
-  schemas:
-    NumbersMap:
-      type: object
-      required:
-        - n1
-        - n2
-      properties:
-        n1:
-          type: integer
-          description: The first number
-        n2:
-          type: integer
-          description: The second number
-```
+Given an OpenAPI spec like [api.yaml](/api.yaml)
 
 Load the spec:
 

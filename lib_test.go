@@ -83,17 +83,17 @@ func TestBootstrapV3(t *testing.T) {
 		"calc/ops/add-get": {
 			"Use":     "add-get",
 			"Short":   "Adds two numbers",
-			"Aliases": []string{"add-get", "ag"},
+			"Aliases": []string{"ag"},
 		},
 		"calc/ops/add-post": {
 			"Use":     "add-post",
 			"Short":   "Adds two numbers via POST",
-			"Aliases": []string{"add-post", "ap"},
+			"Aliases": []string{"ap"},
 		},
 		"calc/ping": {
 			"Use":     "ping",
 			"Short":   "Returns Ok if all is well",
-			"Aliases": []string{"ping"},
+			"Aliases": noAlias,
 		},
 	}
 

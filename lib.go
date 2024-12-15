@@ -47,6 +47,7 @@ type extensions struct {
 	aliases []string
 	group   string
 	ignored bool
+	name    string
 }
 
 func parseExtensions(exts *orderedmap.Map[string, *yaml.Node]) (*extensions, error) {
@@ -71,6 +72,8 @@ func parseExtensions(exts *orderedmap.Map[string, *yaml.Node]) (*extensions, err
 			ex.group = opts.(string)
 		case "x-cli-ignored":
 			ex.ignored = opts.(bool)
+		case "x-cli-name":
+			ex.name = opts.(string)
 		}
 	}
 
@@ -138,8 +141,8 @@ func addRequestBody(cmd *cobra.Command, op *v3.Operation, handlerData *HandlerDa
 		}
 
 		paramName := "climate-data"
-		if aliases := bExts.aliases; len(aliases) > 0 {
-			paramName = aliases[0]
+		if altName := bExts.name; altName != "" {
+			paramName = altName
 		}
 
 		// TODO: Handle all the different MIME types and schemas from body.Content
@@ -210,6 +213,7 @@ func BootstrapV3(rootCmd *cobra.Command, model libopenapi.DocumentModel[v3.Docum
 			}
 
 			cmd.Hidden = exts.hidden
+			cmd.Aliases = exts.aliases
 			cmd.Short = op.Description
 			if op.Summary != "" {
 				cmd.Short = op.Summary
@@ -219,11 +223,9 @@ func BootstrapV3(rootCmd *cobra.Command, model libopenapi.DocumentModel[v3.Docum
 				handler(opts, args, hData)
 			}
 
-			// TODO: hammock on better ways to handle aliases, prefers the first one as of now
 			cmd.Use = op.OperationId // default
-			if aliases := exts.aliases; len(exts.aliases) > 0 {
-				cmd.Use = aliases[0]
-				cmd.Aliases = aliases
+			if altName := exts.name; altName != "" {
+				cmd.Use = altName
 			}
 
 			if g := exts.group; g != "" {
