@@ -1,5 +1,8 @@
 # climate
 
+[![Go Report Card](https://goreportcard.com/badge/github.com/lispyclouds/climate)](https://goreportcard.com/report/github.com/lispyclouds/climate)
+[![CI Status](https://github.com/lispyclouds/climate/workflows/Test/badge.svg)](https://github.com/lispyclouds/climate/actions?query=workflow%3ATest)
+
 Go is a fantastic language to build CLI tooling, specially the ones for interacting with an API server. `<your tool>ctl` anyone?
 But if you're tired of building bespoke CLIs everytime or think that the swagger codegen isn't just good enough, look no further.
 
