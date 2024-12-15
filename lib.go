@@ -12,14 +12,26 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// Currently supported OpenAPI types
+type OpenAPIType string
+
+const (
+	String  OpenAPIType = "string"
+	Number  OpenAPIType = "number"
+	Integer OpenAPIType = "integer"
+	Boolean OpenAPIType = "boolean"
+)
+
+// Metadata for all parameters
 type ParamMeta struct {
 	Name string
-	Type string // Same as the type name in OpenAPI
+	Type OpenAPIType
 }
 
+// Data passed into each handler
 type HandlerData struct {
 	Method           string      // the HTTP method
-	Path             string      // the parameterised path
+	Path             string      // the parameterised path. currently non interpolated
 	PathParams       []ParamMeta // List of path params
 	QueryParams      []ParamMeta // List of query params
 	HeaderParams     []ParamMeta // List of header params
@@ -27,6 +39,7 @@ type HandlerData struct {
 	RequestBodyParam ParamMeta   // The request body
 }
 
+// The handler signature
 type Handler func(opts *cobra.Command, args []string, data HandlerData)
 
 type extensions struct {
@@ -73,19 +86,19 @@ func addParams(cmd *cobra.Command, op *v3.Operation, handlerData *HandlerData) {
 
 	for _, param := range op.Parameters {
 		schema := param.Schema.Schema()
-		t := "string"
+		t := String
 		if schema != nil {
-			t = schema.Type[0]
+			t = OpenAPIType(schema.Type[0])
 		}
 
 		switch t {
-		case "string":
+		case String:
 			flags.String(param.Name, "", param.Description)
-		case "integer":
+		case Integer:
 			flags.Int(param.Name, 0, param.Description)
-		case "number":
+		case Number:
 			flags.Float64(param.Name, 0.0, param.Description)
-		case "boolean":
+		case Boolean:
 			flags.Bool(param.Name, false, param.Description)
 		default:
 			// TODO: array, object
@@ -132,7 +145,7 @@ func addRequestBody(cmd *cobra.Command, op *v3.Operation, handlerData *HandlerDa
 		// TODO: Handle all the different MIME types and schemas from body.Content
 		// maybe assert the shape if mime is json and schema is an object
 		// Treats all request body content as a string as of now
-		handlerData.RequestBodyParam = ParamMeta{Name: paramName, Type: "string"}
+		handlerData.RequestBodyParam = ParamMeta{Name: paramName, Type: String}
 		cmd.Flags().String(paramName, "", body.Description)
 
 		if req := body.Required; req != nil && *req {

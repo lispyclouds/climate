@@ -178,11 +178,10 @@ This can be used to query the params from the command mostly in a type safe mann
 
 ```go
 // to get all the int path params
-
 for _, param := range data.PathParams {
-    if param.Type == "integer" {
-        value, _ := opts.Flags().GetInt(param.Name)
-    }
+	if param.Type == climate.Integer {
+		value, _ := opts.Flags().GetInt(param.Name)
+	}
 }
 ```
 
