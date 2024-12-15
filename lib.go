@@ -72,7 +72,11 @@ func addParams(cmd *cobra.Command, op *v3.Operation, handlerData *HandlerData) {
 	cookieParams := []ParamMeta{}
 
 	for _, param := range op.Parameters {
-		t := param.Schema.Schema().Type[0]
+		schema := param.Schema.Schema()
+		t := "string"
+		if schema != nil {
+			t = schema.Type[0]
+		}
 
 		switch t {
 		case "string":
@@ -125,19 +129,14 @@ func addRequestBody(cmd *cobra.Command, op *v3.Operation, handlerData *HandlerDa
 			paramName = aliases[0]
 		}
 
-		for mime, kind := range body.Content.FromOldest() {
-			t := kind.Schema.Schema().Type[0]
-			handlerData.RequestBodyParam = ParamMeta{Name: paramName, Type: t}
+		// TODO: Handle all the different MIME types and schemas from body.Content
+		// maybe assert the shape if mime is json and schema is an object
+		// Treats all request body content as a string as of now
+		handlerData.RequestBodyParam = ParamMeta{Name: paramName, Type: "string"}
+		cmd.Flags().String(paramName, "", body.Description)
 
-			switch t {
-			case "object":
-				cmd.Flags().String(paramName, "", body.Description)
-				if req := body.Required; req != nil && *req {
-					cmd.MarkFlagRequired(paramName)
-				}
-			default:
-				slog.Warn("TODO: Unhandled request body type", "mime", mime, "type", kind.Schema.Schema().Type[0])
-			}
+		if req := body.Required; req != nil && *req {
+			cmd.MarkFlagRequired(paramName)
 		}
 	}
 
