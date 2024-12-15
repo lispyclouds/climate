@@ -17,7 +17,6 @@ Experimental, in dev flux and looking for design/usage feedback!
 ### TODO:
 - Interpolate the HTTP paths when sending to the handler with the path params
 - Support more of the OpenAPI types and their checks. eg arrays, enums, objects, multi types etc
-- Much better unit tests touching just the public fns and assert shape
 - Type checking request bodies
 
 ### Installation

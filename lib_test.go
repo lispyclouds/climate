@@ -2,7 +2,6 @@ package climate
 
 import (
 	"fmt"
-	"log/slog"
 	"testing"
 
 	"github.com/spf13/cobra"
@@ -16,13 +15,21 @@ func TestLoadFileV3(t *testing.T) {
 	}
 }
 
-func checkCmdNames(t *testing.T, cmd *cobra.Command, names ...string) {
-	actual := []string{}
-	for _, cmd := range cmd.Commands() {
-		actual = append(actual, cmd.Name())
+func assertCmdTree(t *testing.T, cmd *cobra.Command, assertConf map[string]map[string]any, prefix string) {
+	fmt.Println("Checking cmd level " + prefix)
+
+	expected, ok := assertConf[prefix]
+	if !ok {
+		t.Fatalf("Invalid prefix found: %s", prefix)
 	}
 
-	assert.Subset(t, names, actual)
+	assert.Equal(t, expected["Use"], cmd.Use)
+	assert.Equal(t, expected["Short"], cmd.Short)
+	assert.Equal(t, expected["Aliases"], cmd.Aliases)
+
+	for _, subCmd := range cmd.Commands() {
+		assertCmdTree(t, subCmd, assertConf, prefix+"/"+subCmd.Use)
+	}
 }
 
 func TestBootstrapV3(t *testing.T) {
@@ -32,7 +39,7 @@ func TestBootstrapV3(t *testing.T) {
 	}
 
 	handler := func(opts *cobra.Command, args []string, data HandlerData) {
-		slog.Info("called!", "data", fmt.Sprintf("%+v", data))
+		// TODO: test handlers when?
 	}
 	rootCmd := &cobra.Command{
 		Use:   "calc",
@@ -51,15 +58,44 @@ func TestBootstrapV3(t *testing.T) {
 		t.Fatalf("BootstrapV3 failed with: %e", err)
 	}
 
-	checkCmdNames(t, rootCmd, "ops", "ping", "info")
-
-	var subCmd *cobra.Command
-	for _, cmd := range rootCmd.Commands() {
-		if cmd.Name() == "ops" {
-			subCmd = cmd
-			break
-		}
+	noAlias := []string(nil)
+	assertConf := map[string]map[string]any{
+		"calc": {
+			"Use":     "calc",
+			"Short":   "My Calc",
+			"Aliases": noAlias,
+		},
+		"calc/info": {
+			"Use":     "info",
+			"Short":   "Operations on info",
+			"Aliases": noAlias,
+		},
+		"calc/info/GetInfo": {
+			"Use":     "GetInfo",
+			"Short":   "Returns info",
+			"Aliases": noAlias,
+		},
+		"calc/ops": {
+			"Use":     "ops",
+			"Short":   "Operations on ops",
+			"Aliases": noAlias,
+		},
+		"calc/ops/add-get": {
+			"Use":     "add-get",
+			"Short":   "Adds two numbers",
+			"Aliases": []string{"add-get", "ag"},
+		},
+		"calc/ops/add-post": {
+			"Use":     "add-post",
+			"Short":   "Adds two numbers via POST",
+			"Aliases": []string{"add-post", "ap"},
+		},
+		"calc/ping": {
+			"Use":     "ping",
+			"Short":   "Returns Ok if all is well",
+			"Aliases": []string{"ping"},
+		},
 	}
 
-	checkCmdNames(t, subCmd, "add-get", "add-post")
+	assertCmdTree(t, rootCmd, assertConf, rootCmd.Use)
 }

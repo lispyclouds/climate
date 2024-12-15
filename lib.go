@@ -223,7 +223,7 @@ func BootstrapV3(rootCmd *cobra.Command, model libopenapi.DocumentModel[v3.Docum
 			cmd.Use = op.OperationId // default
 			if aliases := exts.aliases; len(exts.aliases) > 0 {
 				cmd.Use = aliases[0]
-				cmd.Aliases = aliases[1:]
+				cmd.Aliases = aliases
 			}
 
 			if g := exts.group; g != "" {
