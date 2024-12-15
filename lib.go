@@ -64,6 +64,86 @@ func parseExtensions(exts *orderedmap.Map[string, *yaml.Node]) (*extensions, err
 	return &ex, nil
 }
 
+func addParams(cmd *cobra.Command, op *v3.Operation, handlerData *HandlerData) {
+	flags := cmd.Flags()
+	queryParams := []ParamMeta{}
+	pathParams := []ParamMeta{}
+	headerParams := []ParamMeta{}
+	cookieParams := []ParamMeta{}
+
+	for _, param := range op.Parameters {
+		t := param.Schema.Schema().Type[0]
+
+		switch t {
+		case "string":
+			flags.String(param.Name, "", param.Description)
+		case "integer":
+			flags.Int(param.Name, 0, param.Description)
+		case "number":
+			flags.Float64(param.Name, 0.0, param.Description)
+		case "boolean":
+			flags.Bool(param.Name, false, param.Description)
+		default:
+			// TODO: array, object
+			slog.Warn("TODO: Unhandled param", "name", param.Name, "type", param.Schema.Schema().Type[0])
+			continue
+		}
+
+		meta := ParamMeta{Name: param.Name, Type: t}
+		switch param.In {
+		case "path":
+			pathParams = append(pathParams, meta)
+		case "query":
+			queryParams = append(queryParams, meta)
+		case "header":
+			headerParams = append(headerParams, meta)
+		case "cookie":
+			cookieParams = append(cookieParams, meta)
+		}
+
+		if req := param.Required; req != nil && *req {
+			cmd.MarkFlagRequired(param.Name)
+		}
+	}
+
+	handlerData.QueryParams = queryParams
+	handlerData.PathParams = pathParams
+	handlerData.HeaderParams = headerParams
+	handlerData.CookieParams = cookieParams
+}
+
+func addRequestBody(cmd *cobra.Command, op *v3.Operation, handlerData *HandlerData) error {
+	if body := op.RequestBody; body != nil {
+		// TODO: hammock on ways to handle the req bodies. Maybe take in a stdin?
+		bExts, err := parseExtensions(body.Extensions)
+		if err != nil {
+			return err
+		}
+
+		paramName := "climate-data"
+		if aliases := bExts.aliases; len(aliases) > 0 {
+			paramName = aliases[0]
+		}
+
+		for mime, kind := range body.Content.FromOldest() {
+			t := kind.Schema.Schema().Type[0]
+			handlerData.RequestBodyParam = ParamMeta{Name: paramName, Type: t}
+
+			switch t {
+			case "object":
+				cmd.Flags().String(paramName, "", body.Description)
+				if req := body.Required; req != nil && *req {
+					cmd.MarkFlagRequired(paramName)
+				}
+			default:
+				slog.Warn("TODO: Unhandled request body type", "mime", mime, "type", kind.Schema.Schema().Type[0])
+			}
+		}
+	}
+
+	return nil
+}
+
 // Loads and verifies an OpenAPI spec frpm an array of bytes
 func LoadV3(data []byte) (*libopenapi.DocumentModel[v3.Document], error) {
 	document, err := libopenapi.NewDocument(data)
@@ -105,79 +185,10 @@ func BootstrapV3(rootCmd *cobra.Command, model libopenapi.DocumentModel[v3.Docum
 				continue
 			}
 
-			flags := cmd.Flags()
-			queryParams := []ParamMeta{}
-			pathParams := []ParamMeta{}
-			headerParams := []ParamMeta{}
-			cookieParams := []ParamMeta{}
 			hData := HandlerData{Method: method, Path: path}
-
-			for _, param := range op.Parameters {
-				t := param.Schema.Schema().Type[0]
-
-				switch t {
-				case "string":
-					flags.String(param.Name, "", param.Description)
-				case "integer":
-					flags.Int(param.Name, 0, param.Description)
-				case "number":
-					flags.Float64(param.Name, 0.0, param.Description)
-				case "boolean":
-					flags.Bool(param.Name, false, param.Description)
-				default:
-					// TODO: array, object
-					slog.Warn("TODO: Unhandled param", "name", param.Name, "type", param.Schema.Schema().Type[0])
-					continue
-				}
-
-				meta := ParamMeta{Name: param.Name, Type: t}
-				switch param.In {
-				case "path":
-					pathParams = append(pathParams, meta)
-				case "query":
-					queryParams = append(queryParams, meta)
-				case "header":
-					headerParams = append(headerParams, meta)
-				case "cookie":
-					cookieParams = append(cookieParams, meta)
-				}
-
-				if req := param.Required; req != nil && *req {
-					cmd.MarkFlagRequired(param.Name)
-				}
-			}
-
-			hData.QueryParams = queryParams
-			hData.PathParams = pathParams
-			hData.HeaderParams = headerParams
-			hData.CookieParams = cookieParams
-
-			if body := op.RequestBody; body != nil {
-				// TODO: hammock on ways to handle the req bodies. Maybe take in a stdin?
-				bExts, err := parseExtensions(body.Extensions)
-				if err != nil {
-					return err
-				}
-
-				paramName := "climate-data"
-				if aliases := bExts.aliases; len(aliases) > 0 {
-					paramName = aliases[0]
-				}
-
-				for mime, kind := range body.Content.FromOldest() {
-					t := kind.Schema.Schema().Type[0]
-					hData.RequestBodyParam = ParamMeta{Name: paramName, Type: t}
-
-					switch t {
-					case "object":
-						flags.String(paramName, "", body.Description)
-						if req := body.Required; req != nil && *req {
-							cmd.MarkFlagRequired(paramName)
-						}
-					default:
-						slog.Warn("TODO: Unhandled request body type", "mime", mime, "type", kind.Schema.Schema().Type[0])
-					}
-				}
+			addParams(&cmd, op, &hData)
+			if err := addRequestBody(&cmd, op, &hData); err != nil {
+				return err
 			}
 
 			handler, ok := handlers[op.OperationId]
