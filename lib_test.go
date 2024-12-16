@@ -15,6 +15,30 @@ func TestLoadFileV3(t *testing.T) {
 	}
 }
 
+func TestInterpolatePath(t *testing.T) {
+	cmd := cobra.Command{}
+	hData := HandlerData{
+		Method: "get",
+		Path:   "/path/{foo}/to/{bar}/with/{baz}/and/{quxx}/together",
+		PathParams: []ParamMeta{
+			{Name: "foo", Type: String},
+			{Name: "bar", Type: Integer},
+			{Name: "baz", Type: Number},
+			{Name: "quxx", Type: Boolean},
+		},
+	}
+
+	cmd.Flags().String("foo", "yes", "foo usage")
+	cmd.Flags().Int("bar", 420, "bar usage")
+	cmd.Flags().Float64("baz", 420.69, "baz usage")
+	cmd.Flags().Bool("quxx", false, "quxx usage")
+
+	err := interpolatePath(&cmd, &hData)
+	assert.NoError(t, err)
+
+	assert.Equal(t, hData.Path, "/path/yes/to/420/with/420.69/and/false/together")
+}
+
 func assertCmdTree(t *testing.T, cmd *cobra.Command, assertConf map[string]map[string]any, prefix string) {
 	fmt.Println("Checking cmd level " + prefix)
 

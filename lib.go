@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"regexp"
 
 	"github.com/pb33f/libopenapi"
 	v3 "github.com/pb33f/libopenapi/datamodel/high/v3"
@@ -31,7 +32,7 @@ type ParamMeta struct {
 // Data passed into each handler
 type HandlerData struct {
 	Method           string      // the HTTP method
-	Path             string      // the parameterised path. currently non interpolated
+	Path             string      // the path with the path params filled in
 	PathParams       []ParamMeta // List of path params
 	QueryParams      []ParamMeta // List of query params
 	HeaderParams     []ParamMeta // List of header params
@@ -92,6 +93,8 @@ func addParams(cmd *cobra.Command, op *v3.Operation, handlerData *HandlerData) {
 		t := String
 		if schema != nil {
 			t = OpenAPIType(schema.Type[0])
+		} else {
+			slog.Warn("No type set for param, defaulting to string", "param", param.Name, "id", op.OperationId)
 		}
 
 		switch t {
@@ -159,6 +162,36 @@ func addRequestBody(cmd *cobra.Command, op *v3.Operation, handlerData *HandlerDa
 	return nil
 }
 
+func interpolatePath(cmd *cobra.Command, h *HandlerData) error {
+	for _, param := range h.PathParams {
+		pattern, err := regexp.Compile(fmt.Sprintf("({%s})+", param.Name))
+		if err != nil {
+			return err
+		}
+
+		var value string
+		flags := cmd.Flags()
+
+		switch param.Type {
+		case String:
+			value, _ = flags.GetString(param.Name)
+		case Integer:
+			v, _ := flags.GetInt(param.Name)
+			value = fmt.Sprintf("%d", v)
+		case Number:
+			v, _ := flags.GetFloat64(param.Name)
+			value = fmt.Sprintf("%g", v)
+		case Boolean:
+			v, _ := flags.GetBool(param.Name)
+			value = fmt.Sprintf("%t", v)
+		}
+
+		h.Path = pattern.ReplaceAllString(h.Path, value)
+	}
+
+	return nil
+}
+
 // Loads and verifies an OpenAPI spec frpm an array of bytes
 func LoadV3(data []byte) (*libopenapi.DocumentModel[v3.Document], error) {
 	document, err := libopenapi.NewDocument(data)
@@ -219,7 +252,10 @@ func BootstrapV3(rootCmd *cobra.Command, model libopenapi.DocumentModel[v3.Docum
 				cmd.Short = op.Summary
 			}
 			cmd.Run = func(opts *cobra.Command, args []string) {
-				// TODO: Interpolate path
+				if err := interpolatePath(&cmd, &hData); err != nil {
+					slog.Error("Error interpolating path", "err", err)
+				}
+
 				handler(opts, args, hData)
 			}
 

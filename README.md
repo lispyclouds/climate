@@ -12,12 +12,11 @@ What if you can influence the CLI behaviour from the server? This enables you to
 
 ### Status
 
-Experimental, in dev flux and looking for design/usage feedback!
+Alpha, stabilising API and looking for design/usage feedback!
 
-### TODO:
-- Interpolate the HTTP paths when sending to the handler with the path params
-- Support more of the OpenAPI types and their checks. eg arrays, enums, objects, multi types etc
-- Type checking request bodies
+### Ideally support:
+- More of the OpenAPI types and their checks. eg arrays, enums, objects, multi types etc
+- Type checking request bodies of certain MIME types
 
 ### Installation
 
@@ -32,7 +31,7 @@ climate allows the server to influence the CLI behaviour by using OpenAPI's [ext
 Overall, the way it works:
 - Each operation is converted to a Cobra command
 - Each parameter is converted to a flag with its corresponding type
-- Request bodies are a flag as of now, subject to change. Name defaults to `climate-data` unless specified via `x-cli-name`
+- As of now, request bodies are a flag and treated as a string regardless of MIME type. Name defaults to `climate-data` unless specified via `x-cli-name`. All subject to change
 - The provided handlers are attached to each command, grouped and attached to the rootCmd
 
 Influenced by some of the ideas behind [restish](https://rest.sh/) it uses the following extensions as of now:
