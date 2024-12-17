@@ -4,7 +4,7 @@
 [![CI Status](https://github.com/lispyclouds/climate/workflows/Test/badge.svg)](https://github.com/lispyclouds/climate/actions?query=workflow%3ATest)
 
 Go is a fantastic language to build CLI tooling, specially the ones for interacting with an API server. `<your tool>ctl` anyone?
-But if you're tired of building bespoke CLIs everytime or think that the swagger codegen isn't just good enough, look no further.
+But if you're tired of building bespoke CLIs everytime or think that the swagger codegen isn't just good enough or don't quite subscribe to the idea of codegen in general (like me!), look no further.
 
 What if you can influence the CLI behaviour from the server? This enables you to bootstrap your [cobra](https://cobra.dev/) CLI tooling from an [OpenAPI](https://swagger.io/specification/) spec.
 
@@ -15,8 +15,9 @@ What if you can influence the CLI behaviour from the server? This enables you to
 Alpha, stabilising API and looking for design/usage feedback!
 
 ### Ideally support:
-- More of the OpenAPI types and their checks. eg arrays, enums, objects, multi types etc
-- Type checking request bodies of certain MIME types
+- more of the OpenAPI types and their checks. eg arrays, enums, objects, multi types etc
+- type checking request bodies of certain MIME types eg, `application/json`
+- better handling of request bodies eg, providing a stdin or a curl like notation for a file `@payload.json` etc.
 
 ### Installation
 
@@ -72,28 +73,9 @@ func handler(opts *cobra.Command, args []string, data climate.HandlerData) {
 
 (Feedback welcome to make this better!)
 
-As of now, each handler is called with the cobra command it was invoked with, the args and an extra `climate.HandlerData`
-
-The handler data is of the following structure:
-```go
-type ParamMeta struct {
-	Name string
-	Type string // Same as the type name in OpenAPI
-}
-
-type HandlerData struct {
-	Method           string      // the HTTP method
-	Path             string      // the parameterised path
-	PathParams       []ParamMeta // List of path params
-	QueryParams      []ParamMeta // List of query params
-	HeaderParams     []ParamMeta // List of header params
-	CookieParams     []ParamMeta // List of cookie params
-	RequestBodyParam ParamMeta   // The request body
-}
-```
+As of now, each handler is called with the cobra command it was invoked with, the args and an extra `climate.HandlerData`, more info [here](https://pkg.go.dev/github.com/lispyclouds/climate#pkg-types)
 
 This can be used to query the params from the command mostly in a type safe manner:
-
 ```go
 // to get all the int path params
 for _, param := range data.PathParams {
