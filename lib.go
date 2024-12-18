@@ -82,11 +82,13 @@ func parseExtensions(exts *orderedmap.Map[string, *yaml.Node]) (*extensions, err
 }
 
 func addParams(cmd *cobra.Command, op *v3.Operation, handlerData *HandlerData) {
+	var (
+		queryParams  []ParamMeta
+		pathParams   []ParamMeta
+		headerParams []ParamMeta
+		cookieParams []ParamMeta
+	)
 	flags := cmd.Flags()
-	queryParams := []ParamMeta{}
-	pathParams := []ParamMeta{}
-	headerParams := []ParamMeta{}
-	cookieParams := []ParamMeta{}
 
 	for _, param := range op.Parameters {
 		schema := param.Schema.Schema()

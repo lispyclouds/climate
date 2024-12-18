@@ -60,6 +60,32 @@ paths:
       summary: Returns info
       x-cli-group: info
 
+      parameters:
+        - name: p1
+          required: true
+          in: path
+          description: The first param
+          schema:
+            type: integer
+        - name: p2
+          required: true
+          in: query
+          description: The second param
+          schema:
+            type: string
+        - name: p3
+          required: true
+          in: header
+          description: The third param
+          schema:
+            type: number
+        - name: p4
+          required: true
+          in: cookie
+          description: The fourth param
+          schema:
+            type: boolean
+
 components:
   schemas:
     NumbersMap:
