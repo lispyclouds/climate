@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"os"
 	"regexp"
+	"strconv"
 
 	"github.com/pb33f/libopenapi"
 	v3 "github.com/pb33f/libopenapi/datamodel/high/v3"
@@ -179,13 +180,13 @@ func interpolatePath(cmd *cobra.Command, h *HandlerData) error {
 			value, _ = flags.GetString(param.Name)
 		case Integer:
 			v, _ := flags.GetInt(param.Name)
-			value = fmt.Sprintf("%d", v)
+			value = strconv.FormatInt(int64(v), 10)
 		case Number:
 			v, _ := flags.GetFloat64(param.Name)
-			value = fmt.Sprintf("%g", v)
+			value = strconv.FormatFloat(v, 'g', -1, 64)
 		case Boolean:
 			v, _ := flags.GetBool(param.Name)
-			value = fmt.Sprintf("%t", v)
+			value = strconv.FormatBool(v)
 		}
 
 		h.Path = pattern.ReplaceAllString(h.Path, value)
