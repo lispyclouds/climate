@@ -38,7 +38,7 @@ type HandlerData struct {
 	QueryParams      []ParamMeta // List of query params
 	HeaderParams     []ParamMeta // List of header params
 	CookieParams     []ParamMeta // List of cookie params
-	RequestBodyParam ParamMeta   // The request body
+	RequestBodyParam *ParamMeta  // The optional request body
 }
 
 // The handler signature
@@ -154,7 +154,7 @@ func addRequestBody(cmd *cobra.Command, op *v3.Operation, handlerData *HandlerDa
 		// TODO: Handle all the different MIME types and schemas from body.Content
 		// maybe assert the shape if mime is json and schema is an object
 		// Treats all request body content as a string as of now
-		handlerData.RequestBodyParam = ParamMeta{Name: paramName, Type: String}
+		handlerData.RequestBodyParam = &ParamMeta{Name: paramName, Type: String}
 		cmd.Flags().String(paramName, "", body.Description)
 
 		if req := body.Required; req != nil && *req {

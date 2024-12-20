@@ -86,6 +86,11 @@ paths:
           schema:
             type: boolean
 
+      requestBody:
+        description: The requestBody
+        required: true
+        x-cli-name: req-body
+
 components:
   schemas:
     NumbersMap:

@@ -88,6 +88,7 @@ func TestBootstrapV3(t *testing.T) {
 		assert.Equal(t, data.QueryParams, []ParamMeta{{Name: "p2", Type: String}})
 		assert.Equal(t, data.HeaderParams, []ParamMeta{{Name: "p3", Type: Number}})
 		assert.Equal(t, data.CookieParams, []ParamMeta{{Name: "p4", Type: Boolean}})
+		assert.Equal(t, data.RequestBodyParam, &ParamMeta{Name: "req-body", Type: String})
 	}
 	rootCmd := &cobra.Command{
 		Use:   "calc",
@@ -160,6 +161,19 @@ func TestBootstrapV3(t *testing.T) {
 
 	assertCmdTree(t, rootCmd, assertConf, rootCmd.Use)
 
-	rootCmd.SetArgs([]string{"info", "GetInfo", "--p1", "420", "--p2", "yes", "--p3", "420.69", "--p4", "true"})
+	rootCmd.SetArgs([]string{
+		"info",
+		"GetInfo",
+		"--p1",
+		"420",
+		"--p2",
+		"yes",
+		"--p3",
+		"420.69",
+		"--p4",
+		"true",
+		"--req-body",
+		"the string body",
+	})
 	rootCmd.Execute()
 }
