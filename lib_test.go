@@ -10,9 +10,7 @@ import (
 
 func TestLoadFileV3(t *testing.T) {
 	_, err := LoadFileV3("api.yaml")
-	if err != nil {
-		t.Fatalf("LoadFileV3 failed with: %e", err)
-	}
+	assert.NoError(t, err)
 }
 
 func TestInterpolatePath(t *testing.T) {
@@ -43,9 +41,7 @@ func assertCmdTree(t *testing.T, cmd *cobra.Command, assertConf map[string]map[s
 	fmt.Println("Checking cmd level " + prefix)
 
 	expected, ok := assertConf[prefix]
-	if !ok {
-		t.Fatalf("Invalid prefix found: %s", prefix)
-	}
+	assert.Truef(t, ok, "Invalid prefix found: %s", prefix)
 
 	assert.Equal(t, expected["Use"], cmd.Use)
 	assert.Equal(t, expected["Short"], cmd.Short)
@@ -68,7 +64,7 @@ func assertCmdTree(t *testing.T, cmd *cobra.Command, assertConf map[string]map[s
 				_, err = cmd.Flags().GetBool(name)
 			}
 
-			assert.NoError(t, err, fmt.Sprintf("Flag: %s Type: %s", name, typ))
+			assert.NoErrorf(t, err, "Flag: %s Type: %s", name, typ)
 		}
 	}
 
@@ -79,9 +75,7 @@ func assertCmdTree(t *testing.T, cmd *cobra.Command, assertConf map[string]map[s
 
 func TestBootstrapV3(t *testing.T) {
 	model, err := LoadFileV3("api.yaml")
-	if err != nil {
-		t.Fatalf("LoadFileV3 failed with: %e", err)
-	}
+	assert.NoError(t, err)
 
 	handler := func(opts *cobra.Command, args []string, data HandlerData) {
 		assert.Equal(t, data.PathParams, []ParamMeta{{Name: "p1", Type: Integer}})
@@ -103,9 +97,7 @@ func TestBootstrapV3(t *testing.T) {
 	}
 
 	err = BootstrapV3(rootCmd, *model, handlers)
-	if err != nil {
-		t.Fatalf("BootstrapV3 failed with: %e", err)
-	}
+	assert.NoError(t, err)
 
 	var noAlias []string
 	assertConf := map[string]map[string]any{

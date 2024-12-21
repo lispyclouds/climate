@@ -37,7 +37,7 @@ paths:
         - ap
 
       requestBody:
-        description: The numebers map
+        description: The numbers map
         required: true
         x-cli-name: nmap
         content:

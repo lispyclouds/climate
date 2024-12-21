@@ -149,6 +149,12 @@ func addRequestBody(cmd *cobra.Command, op *v3.Operation, handlerData *HandlerDa
 		paramName := "climate-data"
 		if altName := bExts.name; altName != "" {
 			paramName = altName
+		} else {
+			slog.Warn(
+				fmt.Sprintf("No name set of requestBody, defaulting to %s", paramName),
+				"id",
+				op.OperationId,
+			)
 		}
 
 		// TODO: Handle all the different MIME types and schemas from body.Content
@@ -244,7 +250,7 @@ func BootstrapV3(rootCmd *cobra.Command, model libopenapi.DocumentModel[v3.Docum
 
 			handler, ok := handlers[op.OperationId]
 			if !ok {
-				slog.Warn("Ho handler defined, skipping", "id", op.OperationId)
+				slog.Warn("No handler defined, skipping", "id", op.OperationId)
 				continue
 			}
 
