@@ -42,7 +42,7 @@ type HandlerData struct {
 }
 
 // The handler signature
-type Handler func(opts *cobra.Command, args []string, data HandlerData)
+type Handler func(opts *cobra.Command, args []string, data HandlerData) error
 
 type extensions struct {
 	hidden  bool
@@ -260,12 +260,12 @@ func BootstrapV3(rootCmd *cobra.Command, model libopenapi.DocumentModel[v3.Docum
 			if op.Summary != "" {
 				cmd.Short = op.Summary
 			}
-			cmd.Run = func(opts *cobra.Command, args []string) {
+			cmd.RunE = func(opts *cobra.Command, args []string) error {
 				if err := interpolatePath(&cmd, &hData); err != nil {
-					slog.Error("Error interpolating path", "err", err)
+					return err
 				}
 
-				handler(opts, args, hData)
+				return handler(opts, args, hData)
 			}
 
 			cmd.Use = op.OperationId // default

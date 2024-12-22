@@ -77,12 +77,14 @@ func TestBootstrapV3(t *testing.T) {
 	model, err := LoadFileV3("api.yaml")
 	assert.NoError(t, err)
 
-	handler := func(opts *cobra.Command, args []string, data HandlerData) {
+	handler := func(opts *cobra.Command, args []string, data HandlerData) error {
 		assert.Equal(t, data.PathParams, []ParamMeta{{Name: "p1", Type: Integer}})
 		assert.Equal(t, data.QueryParams, []ParamMeta{{Name: "p2", Type: String}})
 		assert.Equal(t, data.HeaderParams, []ParamMeta{{Name: "p3", Type: Number}})
 		assert.Equal(t, data.CookieParams, []ParamMeta{{Name: "p4", Type: Boolean}})
 		assert.Equal(t, data.RequestBodyParam, &ParamMeta{Name: "req-body", Type: String})
+
+		return nil
 	}
 	rootCmd := &cobra.Command{
 		Use:   "calc",

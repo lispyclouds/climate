@@ -12,7 +12,7 @@ What if you can influence the CLI behaviour from the server? This enables you to
 
 ### Status
 
-Alpha, stabilising API and looking for design/usage feedback!
+Alpha, looking for design/usage feedback!
 
 ### Ideally support:
 - more of the OpenAPI types and their checks. eg arrays, enums, objects, multi types etc
@@ -56,17 +56,19 @@ Define a cobra root command:
 
 ```go
 rootCmd := &cobra.Command{
-    Use:   "calc",
-    Short: "My Calc",
-    Long:  "My Calc powered by OpenAPI",
+	Use:   "calc",
+	Short: "My Calc",
+	Long:  "My Calc powered by OpenAPI",
 }
 ```
 
 Define one or more handler functions of the following signature:
 ```go
-func handler(opts *cobra.Command, args []string, data climate.HandlerData) {
-    // do something more useful
-    slog.Info("called!", "data", fmt.Sprintf("%+v", data))
+func handler(opts *cobra.Command, args []string, data climate.HandlerData) error {
+	slog.Info("called!", "data", fmt.Sprintf("%+v", data))
+	err := doSomethingUseful(data)
+
+	return err
 }
 ```
 #### Handler Data
@@ -89,10 +91,10 @@ Define the handlers for the necessary operations. These map to the `operationId`
 
 ```go
 handlers := map[string]Handler{
-    "AddGet":      handler,
-    "AddPost":     handler,
-    "HealthCheck": handler,
-    "GetInfo":     handler,
+	"AddGet":      handler,
+	"AddPost":     handler,
+	"HealthCheck": handler,
+	"GetInfo":     handler,
 }
 ```
 
