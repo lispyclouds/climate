@@ -3,6 +3,8 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/lispyclouds/climate)](https://goreportcard.com/report/github.com/lispyclouds/climate)
 [![CI Status](https://github.com/lispyclouds/climate/workflows/Test/badge.svg)](https://github.com/lispyclouds/climate/actions?query=workflow%3ATest)
 
+Read the detailed [blogpost](https://zuplo.com/blog/2025/02/02/generate-cli-from-api-with-climate)!
+
 Go is a fantastic language to build CLI tooling, specially the ones for interacting with an API server. `<your tool>ctl` anyone?
 But if you're tired of building bespoke CLIs everytime or think that the swagger codegen isn't just good enough or don't quite subscribe to the idea of codegen in general (like me!), look no further.
 
