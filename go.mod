@@ -5,8 +5,8 @@ go 1.23.0
 toolchain go1.23.4
 
 require (
-	github.com/pb33f/libopenapi v0.21.4
-	github.com/spf13/cobra v1.8.1
+	github.com/pb33f/libopenapi v0.21.5
+	github.com/spf13/cobra v1.9.0
 	github.com/stretchr/testify v1.10.0
 	gopkg.in/yaml.v3 v3.0.1
 )
