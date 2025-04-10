@@ -20,5 +20,5 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/speakeasy-api/jsonpath v0.6.1 // indirect
 	github.com/spf13/pflag v1.0.6 // indirect
-	github.com/wk8/go-ordered-map/v2 v2.1.9-0.20240816141633-0a40785b4f41 // indirect
+	github.com/wk8/go-ordered-map/v2 v2.1.9-0.20250401010720-46d686821e33 // indirect
 )
