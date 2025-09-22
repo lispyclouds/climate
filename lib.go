@@ -1,3 +1,10 @@
+// Copyright 2025 Rahul De
+// SPDX-License-Identifier: MIT
+
+// climate allows the server to influence the CLI behaviour by using OpenAPI's extensions.
+// It encourages spec-first practices thereby keeping both users and maintenance manageable.
+// It does just enough to handle the spec and nothing more.
+
 package climate
 
 import (
