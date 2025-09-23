@@ -215,8 +215,8 @@ func LoadV3(data []byte) (*libopenapi.DocumentModel[v3.Document], error) {
 		return nil, err
 	}
 
-	model, errors := document.BuildV3Model()
-	for _, err := range errors {
+	model, err := document.BuildV3Model()
+	if err != nil {
 		return nil, fmt.Errorf("Cannot create v3 model: %e", err)
 	}
 
