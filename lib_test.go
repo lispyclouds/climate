@@ -1,7 +1,6 @@
 package climate
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/spf13/cobra"
@@ -38,7 +37,7 @@ func TestInterpolatePath(t *testing.T) {
 }
 
 func assertCmdTree(t *testing.T, cmd *cobra.Command, assertConf map[string]map[string]any, prefix string) {
-	fmt.Println("Checking cmd level " + prefix)
+	t.Log("Checking cmd level " + prefix)
 
 	expected, ok := assertConf[prefix]
 	assert.Truef(t, ok, "Invalid prefix found: %s", prefix)
