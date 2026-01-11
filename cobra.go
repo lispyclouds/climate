@@ -194,6 +194,10 @@ func BootstrapV3Cobra(rootCmd *cobra.Command, model libopenapi.DocumentModel[v3.
 	return nil
 }
 
+// Bootstraps a cobra.Command with the loaded model and a handler map
+//
+// Deprecated: Will be kept for backwards compatibility.
+// Use BootstrapV3Cobra instead.
 func BootstrapV3(rootCmd *cobra.Command, model libopenapi.DocumentModel[v3.Document], handlers map[string]Handler) error {
 	return BootstrapV3Cobra(rootCmd, model, handlers)
 }
