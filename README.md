@@ -8,7 +8,7 @@ Read the detailed [blogpost](https://zuplo.com/blog/2025/02/02/generate-cli-from
 Go is a fantastic language to build CLI tooling, specially the ones for interacting with an API server. `<your tool>ctl` anyone?
 But if you're tired of building bespoke CLIs everytime or think that the swagger codegen isn't just good enough or don't quite subscribe to the idea of codegen in general (like me!), look no further.
 
-What if you can influence the CLI behaviour from the server? This enables you to bootstrap your [cobra](https://cobra.dev/) CLI tooling from an [OpenAPI](https://swagger.io/specification/) spec. Checkout [Wendy](https://bob-cd.github.io/cli/#wendy) as an example of a full CLI project made using climate.
+What if you can influence the CLI behaviour from the server? This enables you to bootstrap your [cobra](https://cobra.dev/) or [urfave/cli](https://cli.urfave.org/) CLI tooling from an [OpenAPI](https://swagger.io/specification/) spec. Checkout [Wendy](https://bob-cd.github.io/cli/#wendy) as an example of a full CLI project made using climate.
 
 ## Getting started
 
@@ -53,20 +53,36 @@ Load the spec:
 model, err := climate.LoadFileV3("api.yaml") // or climate.LoadV3 with []byte
 ```
 
-Define a cobra root command:
+Define a root command:
 
 ```go
+// Cobra
 rootCmd := &cobra.Command{
 	Use:   "calc",
 	Short: "My Calc",
 	Long:  "My Calc powered by OpenAPI",
+}
+
+// urfave/cli
+rootCmd := &cli.Command{
+	Name:        "calc",
+	Description: "My Calc",
 }
 ```
 
 Define one or more handler functions of the following signature:
 
 ```go
+// Cobra
 func handler(opts *cobra.Command, args []string, data climate.HandlerData) error {
+	slog.Info("called!", "data", fmt.Sprintf("%+v", data))
+	err := doSomethingUseful(data)
+
+	return err
+}
+
+// urfave/cli
+func handler(opts *cli.Command, args []string, data climate.HandlerData) error {
 	slog.Info("called!", "data", fmt.Sprintf("%+v", data))
 	err := doSomethingUseful(data)
 
@@ -86,7 +102,11 @@ This can be used to query the params from the command mostly in a type safe mann
 // to get all the int path params
 for _, param := range data.PathParams {
 	if param.Type == climate.Integer {
+        // Cobra
 		value, _ := opts.Flags().GetInt(param.Name)
+
+        // urfave/cli
+		value, _ := opts.Int(param.Name)
 	}
 }
 ```
@@ -105,7 +125,11 @@ handlers := map[string]Handler{
 Bootstrap the root command:
 
 ```go
-err := climate.BootstrapV3(rootCmd, *model, handlers)
+// Cobra
+err := climate.BootstrapV3Cobra(rootCmd, *model, handlers)
+
+// urfave/cli
+err := climate.BootstrapV3UrfaveCli(rootCmd, *model, handlers)
 ```
 
 Continue adding more commands and/or execute:
@@ -113,7 +137,11 @@ Continue adding more commands and/or execute:
 ```go
 // add more commands not from the spec
 
+// Cobra
 rootCmd.Execute()
+
+// urfave/cli
+rootCmd.Run(context.TODO(), os.Args)
 ```
 
 Sample output:
