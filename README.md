@@ -18,7 +18,7 @@ climate allows the server to influence the CLI behaviour by using OpenAPI's [ext
 
 Overall, the way it works:
 
-- Each operation is converted to a Cobra command
+- Each operation is converted to a Cobra or urfave/cli command
 - Each parameter is converted to a flag with its corresponding type
 - As of now, request bodies are a flag and treated as a string regardless of MIME type. Name defaults to `climate-data` unless specified via `x-cli-name`. All subject to change
 - The provided handlers are attached to each command, grouped and attached to the rootCmd

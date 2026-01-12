@@ -32,31 +32,37 @@ func addParamsUrfaveCli(cmd *cli.Command, op *v3.Operation, handlerData *Handler
 
 	for _, param := range op.Parameters {
 		t := getParamType(param, op)
+		name := param.Name
+		desc := param.Description
+		required := false
+		if req := param.Required; req != nil {
+			required = *req
+		}
 
 		switch t {
 		case String:
 			flags = append(flags, &cli.StringFlag{
-				Name:     param.Name,
-				Usage:    param.Description,
-				Required: *param.Required,
+				Name:     name,
+				Usage:    desc,
+				Required: required,
 			})
 		case Integer:
 			flags = append(flags, &cli.IntFlag{
-				Name:     param.Name,
-				Usage:    param.Description,
-				Required: *param.Required,
+				Name:     name,
+				Usage:    desc,
+				Required: required,
 			})
 		case Number:
 			flags = append(flags, &cli.Float64Flag{
-				Name:     param.Name,
-				Usage:    param.Description,
-				Required: *param.Required,
+				Name:     name,
+				Usage:    desc,
+				Required: required,
 			})
 		case Boolean:
 			flags = append(flags, &cli.BoolFlag{
-				Name:     param.Name,
-				Usage:    param.Description,
-				Required: *param.Required,
+				Name:     name,
+				Usage:    desc,
+				Required: required,
 			})
 		default:
 			// TODO: array, object
