@@ -85,7 +85,7 @@ func TestBootstrapV3Cobra(t *testing.T) {
 		Short: "My Calc",
 		Long:  "My Calc powered by OpenAPI",
 	}
-	handlers := map[string]Handler{
+	handlers := map[string]HandlerCobra{
 		"AddGet":      handler,
 		"AddPost":     handler,
 		"HealthCheck": handler,

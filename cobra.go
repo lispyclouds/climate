@@ -18,10 +18,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// Deprecated: Use HandlerCobra instead
-type Handler func(opts *cobra.Command, args []string, data HandlerData) error
+type HandlerCobra func(opts *cobra.Command, args []string, data HandlerData) error
 
-type HandlerCobra = Handler
+// Deprecated: Use HandlerCobra instead
+type Handler = HandlerCobra
 
 func addParams(cmd *cobra.Command, op *v3.Operation, handlerData *HandlerData) {
 	var (
@@ -122,7 +122,7 @@ func interpolatePathCobra(cmd *cobra.Command, h *HandlerData) error {
 }
 
 // Bootstraps a cobra.Command with the loaded model and a handler map
-func BootstrapV3Cobra(rootCmd *cobra.Command, model libopenapi.DocumentModel[v3.Document], handlers map[string]Handler) error {
+func BootstrapV3Cobra(rootCmd *cobra.Command, model libopenapi.DocumentModel[v3.Document], handlers map[string]HandlerCobra) error {
 	cmdGroups := make(map[string][]cobra.Command)
 
 	for path, item := range model.Model.Paths.PathItems.FromOldest() {
