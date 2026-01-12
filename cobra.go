@@ -18,8 +18,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// Deprecated: Use HandlerCobra instead
 type Handler func(opts *cobra.Command, args []string, data HandlerData) error
-type HandlerCobra Handler
+
+type HandlerCobra = Handler
 
 func addParams(cmd *cobra.Command, op *v3.Operation, handlerData *HandlerData) {
 	var (
@@ -196,8 +198,7 @@ func BootstrapV3Cobra(rootCmd *cobra.Command, model libopenapi.DocumentModel[v3.
 
 // Bootstraps a cobra.Command with the loaded model and a handler map
 //
-// Deprecated: Will be kept for backwards compatibility.
-// Use BootstrapV3Cobra instead.
+// Deprecated: Will be kept for backwards compatibility. Use BootstrapV3Cobra instead.
 func BootstrapV3(rootCmd *cobra.Command, model libopenapi.DocumentModel[v3.Document], handlers map[string]Handler) error {
 	return BootstrapV3Cobra(rootCmd, model, handlers)
 }
