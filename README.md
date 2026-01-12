@@ -36,6 +36,7 @@ Influenced by some of the ideas behind [restish](https://rest.sh/) it uses the f
 - more of the OpenAPI types and their checks. eg arrays, enums, objects, multi types etc
 - type checking request bodies of certain MIME types eg, `application/json`
 - better handling of request bodies eg, providing a stdin or a curl like notation for a file `@payload.json` etc.
+- more CLI libs?
 
 ### Installation
 
@@ -102,10 +103,10 @@ This can be used to query the params from the command mostly in a type safe mann
 // to get all the int path params
 for _, param := range data.PathParams {
 	if param.Type == climate.Integer {
-        // Cobra
+		// Cobra
 		value, _ := opts.Flags().GetInt(param.Name)
 
-        // urfave/cli
+		// urfave/cli
 		value, _ := opts.Int(param.Name)
 	}
 }
@@ -114,7 +115,16 @@ for _, param := range data.PathParams {
 Define the handlers for the necessary operations. These map to the `operationId` field of each operation:
 
 ```go
-handlers := map[string]Handler{
+// Cobra
+handlers := map[string]HandlerCobra{
+	"AddGet":      handler,
+	"AddPost":     handler,
+	"HealthCheck": handler,
+	"GetInfo":     handler,
+}
+
+// urfave/cli
+handlers := map[string]HandlerUrfaveCli{
 	"AddGet":      handler,
 	"AddPost":     handler,
 	"HealthCheck": handler,
@@ -144,7 +154,7 @@ rootCmd.Execute()
 rootCmd.Run(context.TODO(), os.Args)
 ```
 
-Sample output:
+Sample output using Cobra:
 
 ```
 $ go run main.go --help
