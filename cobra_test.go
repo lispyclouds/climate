@@ -7,11 +7,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestLoadFileV3(t *testing.T) {
-	_, err := LoadFileV3("api.yaml")
-	assert.NoError(t, err)
-}
-
 func TestInterpolatePath(t *testing.T) {
 	cmd := cobra.Command{}
 	hData := HandlerData{
@@ -30,7 +25,7 @@ func TestInterpolatePath(t *testing.T) {
 	cmd.Flags().Float64("baz", 420.69, "baz usage")
 	cmd.Flags().Bool("quxx", false, "quxx usage")
 
-	err := interpolatePath(&cmd, &hData)
+	err := interpolatePathCobra(&cmd, &hData)
 	assert.NoError(t, err)
 
 	assert.Equal(t, hData.Path, "/path/yes/to/420/with/420.69/and/false/together")
@@ -72,7 +67,7 @@ func assertCmdTree(t *testing.T, cmd *cobra.Command, assertConf map[string]map[s
 	}
 }
 
-func TestBootstrapV3(t *testing.T) {
+func TestBootstrapV3Cobra(t *testing.T) {
 	model, err := LoadFileV3("api.yaml")
 	assert.NoError(t, err)
 
@@ -97,7 +92,7 @@ func TestBootstrapV3(t *testing.T) {
 		"GetInfo":     handler,
 	}
 
-	err = BootstrapV3(rootCmd, *model, handlers)
+	err = BootstrapV3Cobra(rootCmd, *model, handlers)
 	assert.NoError(t, err)
 
 	var noAlias []string
@@ -168,5 +163,6 @@ func TestBootstrapV3(t *testing.T) {
 		"--req-body",
 		"the string body",
 	})
-	rootCmd.Execute()
+
+	assert.NoError(t, rootCmd.Execute())
 }
