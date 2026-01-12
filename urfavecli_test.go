@@ -54,7 +54,7 @@ func assertCmdTreeUrfaveCli(t *testing.T, cmd *cli.Command, expected *cli.Comman
 	t.Logf("Checking command %s", cmd.Name)
 
 	assert.Equal(t, expected.Name, cmd.Name)
-	assert.Equal(t, expected.Description, cmd.Description)
+	assert.Equal(t, expected.Usage, cmd.Usage)
 	assert.Equal(t, expected.Aliases, cmd.Aliases)
 
 	cmd.InvalidFlagAccessHandler = func(_ context.Context, cmd *cli.Command, name string) {
@@ -94,8 +94,8 @@ func TestBootstrapV3UrfaveCli(t *testing.T) {
 		return nil
 	}
 	rootCmd := &cli.Command{
-		Name:        "calc",
-		Description: "My Calc",
+		Name:  "calc",
+		Usage: "My Calc",
 	}
 	handlers := map[string]HandlerUrfaveCli{
 		"AddGet":      handler,
@@ -109,31 +109,31 @@ func TestBootstrapV3UrfaveCli(t *testing.T) {
 
 	var noAlias []string
 	expectedCmd := &cli.Command{
-		Name:        "calc",
-		Description: "My Calc",
-		Aliases:     noAlias,
+		Name:    "calc",
+		Usage:   "My Calc",
+		Aliases: noAlias,
 		Commands: []*cli.Command{
 			{
-				Name:        "info",
-				Description: "Operations on info",
-				Aliases:     noAlias,
+				Name:    "info",
+				Usage:   "Operations on info",
+				Aliases: noAlias,
 				Commands: []*cli.Command{
 					{
-						Name:        "GetInfo",
-						Description: "Returns info",
-						Aliases:     noAlias,
+						Name:    "GetInfo",
+						Usage:   "Returns info",
+						Aliases: noAlias,
 					},
 				},
 			},
 			{
-				Name:        "ops",
-				Description: "Operations on ops",
-				Aliases:     noAlias,
+				Name:    "ops",
+				Usage:   "Operations on ops",
+				Aliases: noAlias,
 				Commands: []*cli.Command{
 					{
-						Name:        "add-get",
-						Description: "Adds two numbers",
-						Aliases:     []string{"ag"},
+						Name:    "add-get",
+						Usage:   "Adds two numbers",
+						Aliases: []string{"ag"},
 						Flags: []cli.Flag{
 							&cli.IntFlag{
 								Name: "n1",
@@ -144,9 +144,9 @@ func TestBootstrapV3UrfaveCli(t *testing.T) {
 						},
 					},
 					{
-						Name:        "add-post",
-						Description: "Adds two numbers via POST",
-						Aliases:     []string{"ap"},
+						Name:    "add-post",
+						Usage:   "Adds two numbers via POST",
+						Aliases: []string{"ap"},
 						Flags: []cli.Flag{
 							&cli.StringFlag{
 								Name: "nmap",
@@ -156,9 +156,9 @@ func TestBootstrapV3UrfaveCli(t *testing.T) {
 				},
 			},
 			{
-				Name:        "ping",
-				Description: "Returns Ok if all is well",
-				Aliases:     noAlias,
+				Name:    "ping",
+				Usage:   "Returns Ok if all is well",
+				Aliases: noAlias,
 			},
 		},
 	}

@@ -33,7 +33,7 @@ func addParamsUrfaveCli(cmd *cli.Command, op *v3.Operation, handlerData *Handler
 	for _, param := range op.Parameters {
 		t := getParamType(param, op)
 		name := param.Name
-		desc := param.Description
+		usage := param.Description
 		required := false
 		if req := param.Required; req != nil {
 			required = *req
@@ -43,25 +43,25 @@ func addParamsUrfaveCli(cmd *cli.Command, op *v3.Operation, handlerData *Handler
 		case String:
 			flags = append(flags, &cli.StringFlag{
 				Name:     name,
-				Usage:    desc,
+				Usage:    usage,
 				Required: required,
 			})
 		case Integer:
 			flags = append(flags, &cli.IntFlag{
 				Name:     name,
-				Usage:    desc,
+				Usage:    usage,
 				Required: required,
 			})
 		case Number:
 			flags = append(flags, &cli.Float64Flag{
 				Name:     name,
-				Usage:    desc,
+				Usage:    usage,
 				Required: required,
 			})
 		case Boolean:
 			flags = append(flags, &cli.BoolFlag{
 				Name:     name,
-				Usage:    desc,
+				Usage:    usage,
 				Required: required,
 			})
 		default:
@@ -120,14 +120,11 @@ func interpolatePathUrfaveCli(cmd *cli.Command, h *HandlerData) error {
 		case String:
 			value = cmd.String(param.Name)
 		case Integer:
-			v := cmd.Int(param.Name)
-			value = strconv.FormatInt(int64(v), 10)
+			value = strconv.FormatInt(int64(cmd.Int(param.Name)), 10)
 		case Number:
-			v := cmd.Float64(param.Name)
-			value = strconv.FormatFloat(v, 'g', -1, 64)
+			value = strconv.FormatFloat(cmd.Float64(param.Name), 'g', -1, 64)
 		case Boolean:
-			v := cmd.Bool(param.Name)
-			value = strconv.FormatBool(v)
+			value = strconv.FormatBool(cmd.Bool(param.Name))
 		}
 
 		h.Path = pattern.ReplaceAllString(h.Path, value)
@@ -166,9 +163,9 @@ func BootstrapV3UrfaveCli(rootCmd *cli.Command, model libopenapi.DocumentModel[v
 
 			cmd.Hidden = exts.hidden
 			cmd.Aliases = exts.aliases
-			cmd.Description = op.Description
+			cmd.Usage = op.Description
 			if op.Summary != "" {
-				cmd.Description = op.Summary
+				cmd.Usage = op.Summary
 			}
 			cmd.Action = func(_ context.Context, cmd *cli.Command) error {
 				if err := interpolatePathUrfaveCli(cmd, &hData); err != nil {
@@ -197,8 +194,8 @@ func BootstrapV3UrfaveCli(rootCmd *cli.Command, model libopenapi.DocumentModel[v
 
 	for group, cmds := range cmdGroups {
 		groupedCmd := cli.Command{
-			Name:        group,
-			Description: fmt.Sprintf("Operations on %s", group),
+			Name:  group,
+			Usage: fmt.Sprintf("Operations on %s", group),
 		}
 		groupedCmd.Commands = cmds
 		rootCmd.Commands = append(rootCmd.Commands, &groupedCmd)
