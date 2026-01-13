@@ -8,7 +8,7 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
-func TestInterpolatePathUrfaveCli(t *testing.T) {
+func TestInterpolatePathUrfaveCliV3(t *testing.T) {
 	hData := HandlerData{
 		Method: "get",
 		Path:   "/path/{foo}/to/{bar}/with/{baz}/and/{quxx}/together",
@@ -44,13 +44,13 @@ func TestInterpolatePathUrfaveCli(t *testing.T) {
 		},
 	}
 
-	err := interpolatePathUrfaveCli(&cmd, &hData)
+	err := interpolatePathUrfaveCliV3(&cmd, &hData)
 	assert.NoError(t, err)
 
 	assert.Equal(t, hData.Path, "/path/yes/to/420/with/420.69/and/false/together")
 }
 
-func assertCmdTreeUrfaveCli(t *testing.T, cmd *cli.Command, expected *cli.Command) {
+func assertCmdTreeUrfaveCliV3(t *testing.T, cmd *cli.Command, expected *cli.Command) {
 	t.Logf("Checking command %s", cmd.Name)
 
 	assert.Equal(t, expected.Name, cmd.Name)
@@ -76,11 +76,11 @@ func assertCmdTreeUrfaveCli(t *testing.T, cmd *cli.Command, expected *cli.Comman
 	}
 
 	for _, subCmd := range cmd.Commands {
-		assertCmdTreeUrfaveCli(t, subCmd, expected.Command(subCmd.Name))
+		assertCmdTreeUrfaveCliV3(t, subCmd, expected.Command(subCmd.Name))
 	}
 }
 
-func TestBootstrapV3UrfaveCli(t *testing.T) {
+func TestBootstrapV3UrfaveCliV3(t *testing.T) {
 	model, err := LoadFileV3("api.yaml")
 	assert.NoError(t, err)
 
@@ -97,14 +97,14 @@ func TestBootstrapV3UrfaveCli(t *testing.T) {
 		Name:  "calc",
 		Usage: "My Calc",
 	}
-	handlers := map[string]HandlerUrfaveCli{
+	handlers := map[string]HandlerUrfaveCliV3{
 		"AddGet":      handler,
 		"AddPost":     handler,
 		"HealthCheck": handler,
 		"GetInfo":     handler,
 	}
 
-	err = BootstrapV3UrfaveCli(rootCmd, *model, handlers)
+	err = BootstrapV3UrfaveCliV3(rootCmd, *model, handlers)
 	assert.NoError(t, err)
 
 	var noAlias []string
@@ -163,7 +163,7 @@ func TestBootstrapV3UrfaveCli(t *testing.T) {
 		},
 	}
 
-	assertCmdTreeUrfaveCli(t, rootCmd, expectedCmd)
+	assertCmdTreeUrfaveCliV3(t, rootCmd, expectedCmd)
 
 	assert.NoError(t, rootCmd.Run(
 		context.Background(),

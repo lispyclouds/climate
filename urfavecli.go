@@ -19,9 +19,9 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
-type HandlerUrfaveCli func(opts *cli.Command, args []string, data HandlerData) error
+type HandlerUrfaveCliV3 func(opts *cli.Command, args []string, data HandlerData) error
 
-func addParamsUrfaveCli(cmd *cli.Command, op *v3.Operation, handlerData *HandlerData) {
+func addParamsUrfaveCliV3(cmd *cli.Command, op *v3.Operation, handlerData *HandlerData) {
 	var (
 		queryParams  []ParamMeta
 		pathParams   []ParamMeta
@@ -91,7 +91,7 @@ func addParamsUrfaveCli(cmd *cli.Command, op *v3.Operation, handlerData *Handler
 	handlerData.CookieParams = cookieParams
 }
 
-func addRequestBodyUrfaveCli(cmd *cli.Command, op *v3.Operation, handlerData *HandlerData) error {
+func addRequestBodyUrfaveCliV3(cmd *cli.Command, op *v3.Operation, handlerData *HandlerData) error {
 	name, desc, required, err := makeRequestBody(op, handlerData)
 	if err != nil {
 		return err
@@ -106,7 +106,7 @@ func addRequestBodyUrfaveCli(cmd *cli.Command, op *v3.Operation, handlerData *Ha
 	return nil
 }
 
-func interpolatePathUrfaveCli(cmd *cli.Command, h *HandlerData) error {
+func interpolatePathUrfaveCliV3(cmd *cli.Command, h *HandlerData) error {
 	// TODO: Extract commom
 	for _, param := range h.PathParams {
 		pattern, err := regexp.Compile(fmt.Sprintf("({%s})+", param.Name))
@@ -134,7 +134,7 @@ func interpolatePathUrfaveCli(cmd *cli.Command, h *HandlerData) error {
 }
 
 // Bootstraps a cli.Command with the loaded model and a handler map
-func BootstrapV3UrfaveCli(rootCmd *cli.Command, model libopenapi.DocumentModel[v3.Document], handlers map[string]HandlerUrfaveCli) error {
+func BootstrapV3UrfaveCliV3(rootCmd *cli.Command, model libopenapi.DocumentModel[v3.Document], handlers map[string]HandlerUrfaveCliV3) error {
 	cmdGroups := make(map[string][]*cli.Command)
 
 	for path, item := range model.Model.Paths.PathItems.FromOldest() {
@@ -150,8 +150,8 @@ func BootstrapV3UrfaveCli(rootCmd *cli.Command, model libopenapi.DocumentModel[v
 			}
 
 			hData := HandlerData{Method: method, Path: path}
-			addParamsUrfaveCli(&cmd, op, &hData)
-			if err := addRequestBodyUrfaveCli(&cmd, op, &hData); err != nil {
+			addParamsUrfaveCliV3(&cmd, op, &hData)
+			if err := addRequestBodyUrfaveCliV3(&cmd, op, &hData); err != nil {
 				return err
 			}
 
@@ -168,7 +168,7 @@ func BootstrapV3UrfaveCli(rootCmd *cli.Command, model libopenapi.DocumentModel[v
 				cmd.Usage = op.Summary
 			}
 			cmd.Action = func(_ context.Context, cmd *cli.Command) error {
-				if err := interpolatePathUrfaveCli(cmd, &hData); err != nil {
+				if err := interpolatePathUrfaveCliV3(cmd, &hData); err != nil {
 					return err
 				}
 

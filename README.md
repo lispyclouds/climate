@@ -27,7 +27,7 @@ Influenced by some of the ideas behind [restish](https://rest.sh/) it uses the f
 
 - `x-cli-aliases`: A list of strings which would be used as the alternate names for an operation
 - `x-cli-group`: A string to allow grouping subcommands together. All operations in the same group would become subcommands in that group name
-- `x-cli-hidden`: A boolean to hide the operation from the CLI menu. Same behaviour as a cobra command hide: it's present and expects a handler
+- `x-cli-hidden`: A boolean to hide the operation from the CLI menu. Same behaviour as a command hide: it's present and expects a handler
 - `x-cli-ignored`: A boolean to tell climate to omit the operation completely
 - `x-cli-name`: A string to specify a different name. Applies to operations and request bodies as of now
 
@@ -95,7 +95,7 @@ func handler(opts *cli.Command, args []string, data climate.HandlerData) error {
 
 (Feedback welcome to make this better!)
 
-As of now, each handler is called with the cobra command it was invoked with, the args and an extra `climate.HandlerData`, more info [here](https://pkg.go.dev/github.com/lispyclouds/climate#pkg-types)
+As of now, each handler is called with the command it was invoked with, the args and an extra `climate.HandlerData`, more info [here](https://pkg.go.dev/github.com/lispyclouds/climate#pkg-types)
 
 This can be used to query the params from the command mostly in a type safe manner:
 
@@ -124,7 +124,7 @@ handlers := map[string]HandlerCobra{
 }
 
 // urfave/cli
-handlers := map[string]HandlerUrfaveCli{
+handlers := map[string]HandlerUrfaveCliV3{
 	"AddGet":      handler,
 	"AddPost":     handler,
 	"HealthCheck": handler,
@@ -139,7 +139,7 @@ Bootstrap the root command:
 err := climate.BootstrapV3Cobra(rootCmd, *model, handlers)
 
 // urfave/cli
-err := climate.BootstrapV3UrfaveCli(rootCmd, *model, handlers)
+err := climate.BootstrapV3UrfaveCliV3(rootCmd, *model, handlers)
 ```
 
 Continue adding more commands and/or execute:
