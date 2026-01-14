@@ -11,7 +11,7 @@ import (
 func TestInterpolatePathUrfaveCliV3(t *testing.T) {
 	hData := HandlerData{
 		Method: "get",
-		Path:   "/path/{foo}/to/{bar}/with/{baz}/and/{quxx}/together",
+		Path:   "/path/{foo}/to/{bar}/with/{baz}/and/{quxx}/together/{foo}",
 		PathParams: []ParamMeta{
 			{Name: "foo", Type: String},
 			{Name: "bar", Type: Integer},
@@ -47,7 +47,7 @@ func TestInterpolatePathUrfaveCliV3(t *testing.T) {
 	err := interpolatePathUrfaveCliV3(&cmd, &hData)
 	assert.NoError(t, err)
 
-	assert.Equal(t, hData.Path, "/path/yes/to/420/with/420.69/and/false/together")
+	assert.Equal(t, hData.Path, "/path/yes/to/420/with/420.69/and/false/together/yes")
 }
 
 func assertCmdTreeUrfaveCliV3(t *testing.T, cmd *cli.Command, expected *cli.Command) {

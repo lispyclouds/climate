@@ -11,8 +11,8 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"regexp"
 	"strconv"
+	"strings"
 
 	"github.com/pb33f/libopenapi"
 	v3 "github.com/pb33f/libopenapi/datamodel/high/v3"
@@ -109,11 +109,6 @@ func addRequestBodyUrfaveCliV3(cmd *cli.Command, op *v3.Operation, handlerData *
 func interpolatePathUrfaveCliV3(cmd *cli.Command, h *HandlerData) error {
 	// TODO: Extract commom
 	for _, param := range h.PathParams {
-		pattern, err := regexp.Compile(fmt.Sprintf("({%s})+", param.Name))
-		if err != nil {
-			return err
-		}
-
 		var value string
 
 		switch param.Type {
@@ -127,7 +122,7 @@ func interpolatePathUrfaveCliV3(cmd *cli.Command, h *HandlerData) error {
 			value = strconv.FormatBool(cmd.Bool(param.Name))
 		}
 
-		h.Path = pattern.ReplaceAllString(h.Path, value)
+		h.Path = strings.ReplaceAll(h.Path, "{"+param.Name+"}", value)
 	}
 
 	return nil
@@ -178,6 +173,10 @@ func BootstrapV3UrfaveCliV3(rootCmd *cli.Command, model libopenapi.DocumentModel
 			cmd.Name = op.OperationId // default
 			if altName := exts.name; altName != "" {
 				cmd.Name = altName
+			}
+			cmd.CommandNotFound = func(_ context.Context, cmd *cli.Command, command string) {
+				slog.Error("Unknown command", "command", command)
+				cli.ShowSubcommandHelpAndExit(cmd, 1)
 			}
 
 			if g := exts.group; g != "" {

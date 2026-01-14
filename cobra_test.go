@@ -11,7 +11,7 @@ func TestInterpolatePath(t *testing.T) {
 	cmd := cobra.Command{}
 	hData := HandlerData{
 		Method: "get",
-		Path:   "/path/{foo}/to/{bar}/with/{baz}/and/{quxx}/together",
+		Path:   "/path/{foo}/to/{bar}/with/{baz}/and/{quxx}/together/{foo}",
 		PathParams: []ParamMeta{
 			{Name: "foo", Type: String},
 			{Name: "bar", Type: Integer},
@@ -28,7 +28,7 @@ func TestInterpolatePath(t *testing.T) {
 	err := interpolatePathCobra(&cmd, &hData)
 	assert.NoError(t, err)
 
-	assert.Equal(t, hData.Path, "/path/yes/to/420/with/420.69/and/false/together")
+	assert.Equal(t, hData.Path, "/path/yes/to/420/with/420.69/and/false/together/yes")
 }
 
 func assertCmdTree(t *testing.T, cmd *cobra.Command, assertConf map[string]map[string]any, prefix string) {

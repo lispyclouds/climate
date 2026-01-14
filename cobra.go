@@ -10,8 +10,8 @@ package climate
 import (
 	"fmt"
 	"log/slog"
-	"regexp"
 	"strconv"
+	"strings"
 
 	"github.com/pb33f/libopenapi"
 	v3 "github.com/pb33f/libopenapi/datamodel/high/v3"
@@ -94,11 +94,6 @@ func interpolatePathCobra(cmd *cobra.Command, h *HandlerData) error {
 	flags := cmd.Flags()
 
 	for _, param := range h.PathParams {
-		pattern, err := regexp.Compile(fmt.Sprintf("({%s})+", param.Name))
-		if err != nil {
-			return err
-		}
-
 		var value string
 
 		switch param.Type {
@@ -115,7 +110,7 @@ func interpolatePathCobra(cmd *cobra.Command, h *HandlerData) error {
 			value = strconv.FormatBool(v)
 		}
 
-		h.Path = pattern.ReplaceAllString(h.Path, value)
+		h.Path = strings.ReplaceAll(h.Path, "{"+param.Name+"}", value)
 	}
 
 	return nil
