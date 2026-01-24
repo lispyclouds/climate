@@ -3,7 +3,7 @@ module github.com/lispyclouds/climate
 go 1.25
 
 require (
-	github.com/pb33f/libopenapi v0.31.2
+	github.com/pb33f/libopenapi v0.33.0
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.11.1
 	github.com/urfave/cli/v3 v3.6.2
@@ -15,7 +15,7 @@ require (
 	github.com/buger/jsonparser v1.1.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/pb33f/jsonpath v0.7.0 // indirect
+	github.com/pb33f/jsonpath v0.7.1 // indirect
 	github.com/pb33f/ordered-map/v2 v2.3.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rogpeppe/go-internal v1.14.1 // indirect
