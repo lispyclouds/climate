@@ -3,10 +3,10 @@ module github.com/lispyclouds/climate
 go 1.26.0
 
 require (
-	github.com/pb33f/libopenapi v0.38.7
+	github.com/pb33f/libopenapi v0.40.0
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.12.1
-	github.com/urfave/cli/v3 v3.12.0
+	github.com/urfave/cli/v3 v3.13.0
 	go.yaml.in/yaml/v4 v4.0.0-rc.6
 )
 
