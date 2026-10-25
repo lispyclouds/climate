@@ -7,10 +7,10 @@ github.com/inconshreveable/mousetrap v1.1.0 h1:wN+x4NVGpMsO7ErUn/mUI3vEoE6Jt13X2
 github.com/inconshreveable/mousetrap v1.1.0/go.mod h1:vpF70FUmC8bwa3OWnCshd2FqLfsEA9PFc4w1p2J65bw=
 github.com/pb33f/go-yaml v0.1.1 h1:yWGmhVdwzionRnSc/hEJwcfq6PaZL2QdYzyReXBbX7Q=
 github.com/pb33f/go-yaml v0.1.1/go.mod h1:QvWdkHP5VjFYAeHMQUkaPQqREaQnBNOXmWzAjNrnSdo=
-github.com/pb33f/jsonpath v0.8.4 h1:Yx7fxsKl8scgERL22WhKDs2c6gYNNUonPSWEG8Y194s=
-github.com/pb33f/jsonpath v0.8.4/go.mod h1:eO6mgdhw5RgzCxm/bXTi75VUs0/cCYJzdGjMCCUEI6M=
-github.com/pb33f/libopenapi v0.41.6 h1:W1X/5rOaAk3/Mjwrt+DHaiJO6buhruKWrbQ+pumONkA=
-github.com/pb33f/libopenapi v0.41.6/go.mod h1:mUldESjO6ownR1TCcywvoYp7e4v/bCdQyiiIqsgWne0=
+github.com/pb33f/jsonpath v0.8.5 h1:wsbwJbz6MPUTy5fAtiIlOyQb3oblaa5M7qjtdz6orPw=
+github.com/pb33f/jsonpath v0.8.5/go.mod h1:eO6mgdhw5RgzCxm/bXTi75VUs0/cCYJzdGjMCCUEI6M=
+github.com/pb33f/libopenapi v0.41.7 h1:KJDE7VS18grP5YVnHcHEdGFbc5y3Sd/ZDvZK2bu3O4U=
+github.com/pb33f/libopenapi v0.41.7/go.mod h1:IlfeXtmcY38KEnGJ4OMWFA8I62BCNamuQa8omLnk6R0=
 github.com/pb33f/ordered-map/v2 v2.3.2 h1:wDyaZ2Pv9QLh64X4utCeD5Zoi9nIv2aW3lwv172O5PQ=
 github.com/pb33f/ordered-map/v2 v2.3.2/go.mod h1:1OhFrXu3OYw3kM+FXF+Ug3ugmmZ9LE8z0JfQMLvtV0w=
 github.com/pb33f/testify v0.1.1 h1:mnHe7uxKt8dyNYEGUspow72VjD264DB5rOJq4bz5tJw=
